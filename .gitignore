@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────
+# CiviTrack AI — monorepo .gitignore
+# Covers: Node/Next (frontend/), Python (services/, ml/), data, infra
+# ─────────────────────────────────────────────────────────────
+
+# ── Node / Next.js (frontend/) ──
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# v0.dev sandbox internals (legacy)
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+next.user-config.*
+
+# ── Python (services/, ml/) ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# ── Data & ML artifacts (DVC-tracked, not committed) ──
+/data/
+*.parquet
+*.csv.gz
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+*.pt
+*.onnx
+
+# ── Environment / secrets ──
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# ── Infra / local volumes ──
+infra/**/pgdata/
+infra/**/volumes/
+
+# ── OS / editor ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
