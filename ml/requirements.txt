@@ -1,0 +1,20 @@
+# CiviTrack AI — data engineering & EDA dependencies (M0 Steps D & E)
+# Single environment for the ml/ data pipeline and the EDA notebook.
+
+# ── Data pipeline ──
+pandas>=2.2
+pyarrow>=16
+requests>=2.32
+SQLAlchemy>=2.0
+psycopg[binary]>=3.1
+pandera>=0.20
+pydantic-settings>=2.3
+python-dotenv>=1.0
+
+# ── EDA notebook ──
+matplotlib>=3.8
+seaborn>=0.13
+jupyter>=1.0
+nbconvert>=7.16
+ipykernel>=6.29
+tabulate>=0.9
