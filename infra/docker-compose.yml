@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────
+# CiviTrack AI — local infrastructure
+#
+# Services: postgres (PostGIS + pgvector)  ·  gateway (FastAPI)
+# NOT included (added only when a milestone needs them):
+#   Redis / MinIO / MLflow / Celery — see docs/BLUEPRINT.md.
+#
+# Run from this directory:  docker compose up -d
+# ─────────────────────────────────────────────────────────────
+name: civitrack-ai
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    image: civitrack-ai/postgres:16-postgis3.4-pgvector
+    container_name: civitrack-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-civitrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civitrack_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-civitrack}
+      # Keep init deterministic across host locales
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      # Host port defaults to 5433 to avoid clashing with a native Postgres on
+      # 5432. Container-internal port stays 5432 (used by in-network services).
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      # Persistent data (named volume; survives container recreation)
+      - pgdata:/var/lib/postgresql/data
+      # First-boot initialization scripts (run once on empty data dir)
+      - ../db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-civitrack} -d ${POSTGRES_DB:-civitrack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  gateway:
+    build:
+      context: ../services/gateway
+      dockerfile: Dockerfile
+    image: civitrack-ai/gateway:0.1.0
+    container_name: civitrack-gateway
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Inside the compose network the DB host is the service name.
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-civitrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civitrack_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-civitrack}
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  pgdata:
+    name: civitrack_pgdata
