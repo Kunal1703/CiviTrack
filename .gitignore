@@ -41,6 +41,8 @@ htmlcov/
 # ── Data & ML artifacts (DVC-tracked, not committed) ──
 /data/
 *.parquet
+# Regenerable notebook HTML export (the .ipynb itself is committed)
+ml/notebooks/*.html
 *.csv.gz
 mlruns/
 mlartifacts/
