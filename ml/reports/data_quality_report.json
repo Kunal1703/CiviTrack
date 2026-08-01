@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-07-29T19:17:49.653473+00:00",
+  "ingest": {
+    "fetched_at": "20260729T191718Z",
+    "dataset_id": "erm2-nwe9",
+    "row_count": 50000,
+    "requested_limit": 50000,
+    "since_date": "2024-01-01T00:00:00",
+    "bronze_path": "C:\\Users\\kunal\\Downloads\\Projectt\\data\\bronze\\nyc311_raw_20260729T191718Z.parquet",
+    "columns": [
+      "unique_key",
+      "created_date",
+      "closed_date",
+      "agency",
+      "agency_name",
+      "complaint_type",
+      "descriptor",
+      "status",
+      "borough",
+      "incident_zip",
+      "incident_address",
+      "city",
+      "latitude",
+      "longitude"
+    ]
+  },
+  "cleaning": {
+    "input_rows": 50000,
+    "dropped_missing_created_date": 0,
+    "dropped_duplicates": 0,
+    "rows_missing_geo": 670,
+    "rows_geo_out_of_bounds": 0,
+    "rows_with_resolution": 49521,
+    "output_rows": 50000
+  },
+  "validation": {
+    "passed": true,
+    "failure_cases": 0,
+    "failures": []
+  },
+  "load": {
+    "table": "silver.complaints_311",
+    "rows_loaded": 50000,
+    "rows_with_geometry": 49330
+  },
+  "date_range": {
+    "min": "2024-01-01 00:00:00",
+    "max": "2024-01-06 13:53:47"
+  }
+}
