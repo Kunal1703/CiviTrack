@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     postgres_password: str = "civitrack_dev_pw"
     postgres_db: str = "civitrack"
 
+    # ── ML service (downstream) ──
+    ml_service_url: str = "http://localhost:8001"
+    ml_service_timeout: float = 10.0
+
     @property
     def database_url(self) -> str:
         """SQLAlchemy/psycopg-style DSN. Contains the password — never log this."""

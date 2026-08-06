@@ -1,0 +1,129 @@
+{
+  "Abandoned/Derelict Vehicle": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1-score": 1.0,
+    "support": 190.0
+  },
+  "Animal": {
+    "precision": 0.9761904761904762,
+    "recall": 0.9111111111111111,
+    "f1-score": 0.9425287356321839,
+    "support": 45.0
+  },
+  "Building/Apartment Condition": {
+    "precision": 0.9594594594594594,
+    "recall": 0.988399071925754,
+    "f1-score": 0.9737142857142858,
+    "support": 431.0
+  },
+  "Business/Consumer": {
+    "precision": 0.9470588235294117,
+    "recall": 0.9470588235294117,
+    "f1-score": 0.9470588235294117,
+    "support": 170.0
+  },
+  "Electrical/Elevator": {
+    "precision": 1.0,
+    "recall": 0.975,
+    "f1-score": 0.9873417721518988,
+    "support": 80.0
+  },
+  "Environmental Hazard": {
+    "precision": 0.9846153846153847,
+    "recall": 0.9142857142857143,
+    "f1-score": 0.9481481481481482,
+    "support": 70.0
+  },
+  "Heat/Hot Water": {
+    "precision": 1.0,
+    "recall": 0.9803370786516854,
+    "f1-score": 0.9900709219858156,
+    "support": 356.0
+  },
+  "Homeless/Encampment": {
+    "precision": 0.8415841584158416,
+    "recall": 1.0,
+    "f1-score": 0.9139784946236559,
+    "support": 85.0
+  },
+  "Illegal Parking": {
+    "precision": 0.9951076320939335,
+    "recall": 0.9970588235294118,
+    "f1-score": 0.9960822722820764,
+    "support": 1020.0
+  },
+  "Noise": {
+    "precision": 0.9963133640552996,
+    "recall": 1.0,
+    "f1-score": 0.9981532779316713,
+    "support": 1081.0
+  },
+  "Other": {
+    "precision": 0.90625,
+    "recall": 0.7733333333333333,
+    "f1-score": 0.8345323741007195,
+    "support": 75.0
+  },
+  "Plumbing/Water": {
+    "precision": 0.9693486590038314,
+    "recall": 0.9921568627450981,
+    "f1-score": 0.9806201550387597,
+    "support": 255.0
+  },
+  "Public Safety": {
+    "precision": 0.9338842975206612,
+    "recall": 0.8560606060606061,
+    "f1-score": 0.8932806324110671,
+    "support": 132.0
+  },
+  "Rodent/Pest": {
+    "precision": 0.9846153846153847,
+    "recall": 1.0,
+    "f1-score": 0.9922480620155039,
+    "support": 64.0
+  },
+  "Sanitation": {
+    "precision": 0.990632318501171,
+    "recall": 0.9548532731376975,
+    "f1-score": 0.9724137931034482,
+    "support": 443.0
+  },
+  "Sewer": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1-score": 1.0,
+    "support": 39.0
+  },
+  "Street Condition": {
+    "precision": 0.948220064724919,
+    "recall": 0.9701986754966887,
+    "f1-score": 0.9590834697217676,
+    "support": 302.0
+  },
+  "Street Light": {
+    "precision": 0.9777777777777777,
+    "recall": 1.0,
+    "f1-score": 0.9887640449438202,
+    "support": 44.0
+  },
+  "Tree": {
+    "precision": 0.952,
+    "recall": 0.9916666666666667,
+    "f1-score": 0.9714285714285714,
+    "support": 120.0
+  },
+  "accuracy": 0.9792083166733306,
+  "macro avg": {
+    "precision": 0.9664767263422923,
+    "recall": 0.9606063179196409,
+    "f1-score": 0.9626025176190951,
+    "support": 5002.0
+  },
+  "weighted avg": {
+    "precision": 0.9795788542428763,
+    "recall": 0.9792083166733306,
+    "f1-score": 0.9790419723350845,
+    "support": 5002.0
+  }
+}

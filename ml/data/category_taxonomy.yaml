@@ -1,0 +1,182 @@
+# ─────────────────────────────────────────────────────────────
+# CiviTrack AI — complaint category taxonomy (M1)
+#
+# Maps the 150+ raw NYC 311 `complaint_type` values into a curated set of
+# canonical, product-facing categories. Matching is CASE-INSENSITIVE on the
+# trimmed complaint_type string. Anything not listed here falls back to
+# `default_category`. Categories below `min_category_support` rows at train
+# time are additionally collapsed into the default (see classification config).
+#
+# This file is the single source of truth for the label space. It is
+# version-controlled and human-auditable by design — categories are a product
+# decision, not an opaque clustering output. Bump `version` on any change.
+# ─────────────────────────────────────────────────────────────
+version: 1
+default_category: Other
+
+categories:
+  Heat/Hot Water:
+    - HEAT/HOT WATER
+    - Non-Residential Heat
+    - Boilers
+
+  Noise:
+    - Noise
+    - Noise - Residential
+    - Noise - Commercial
+    - Noise - Street/Sidewalk
+    - Noise - Helicopter
+    - Noise - Vehicle
+    - Noise - House of Worship
+    - Noise - Park
+
+  Illegal Parking:
+    - Illegal Parking
+    - Blocked Driveway
+    - Broken Parking Meter
+
+  Abandoned/Derelict Vehicle:
+    - Abandoned Vehicle
+    - Derelict Vehicles
+    - Abandoned Bike
+
+  Plumbing/Water:
+    - PLUMBING
+    - Plumbing
+    - WATER LEAK
+    - Water System
+    - Water Conservation
+    - Drinking Water
+    - Building Drinking Water Tank
+
+  Sanitation:
+    - UNSANITARY CONDITION
+    - Dirty Condition
+    - Illegal Dumping
+    - Missed Collection
+    - Residential Disposal Complaint
+    - Commercial Disposal Complaint
+    - Litter Basket Request
+    - Litter Basket Complaint
+    - Dumpster Complaint
+    - Sanitation Worker or Vehicle Complaint
+    - Street Sweeping Complaint
+    - Industrial Waste
+    - Institution Disposal Complaint
+    - Wood Pile Remaining
+    - Adopt-A-Basket
+
+  Building/Apartment Condition:
+    - PAINT/PLASTER
+    - DOOR/WINDOW
+    - FLOORING/STAIRS
+    - APPLIANCE
+    - GENERAL
+    - General Construction/Plumbing
+    - Building/Use
+    - Maintenance or Facility
+    - OUTSIDE BUILDING
+    - SAFETY
+    - Cranes and Derricks
+    - Scaffold Safety
+    - BEST/Site Safety
+
+  Electrical/Elevator:
+    - ELECTRIC
+    - Electrical
+    - Elevator
+    - ELEVATOR
+
+  Street Condition:
+    - Street Condition
+    - Sidewalk Condition
+    - Curb Condition
+    - Highway Condition
+    - Root/Sewer/Sidewalk Condition
+    - Obstruction
+    - Snow or Ice
+    - Traffic Signal Condition
+    - Traffic
+    - Street Sign - Dangling
+    - Street Sign - Missing
+    - Street Sign - Damaged
+    - Highway Sign - Damaged
+    - Bridge Condition
+    - Bus Stop Shelter Complaint
+    - Bus Stop Shelter Placement
+    - Bike Rack Condition
+
+  Street Light:
+    - Street Light Condition
+
+  Sewer:
+    - Sewer
+    - Indoor Sewage
+
+  Rodent/Pest:
+    - Rodent
+    - Unsanitary Pigeon Condition
+    - Harboring Bees/Wasps
+
+  Tree:
+    - New Tree Request
+    - Damaged Tree
+    - Overgrown Tree/Branches
+    - Dead/Dying Tree
+    - Illegal Tree Damage
+    - Uprooted Stump
+    - Plant
+
+  Homeless/Encampment:
+    - Encampment
+    - Homeless Person Assistance
+    - Panhandling
+    - Urinating in Public
+
+  Environmental Hazard:
+    - Air Quality
+    - Indoor Air Quality
+    - Asbestos
+    - Mold
+    - Lead
+    - Construction Lead Dust
+    - Hazardous Materials
+    - Radioactive Material
+    - Water Quality
+
+  Public Safety:
+    - Non-Emergency Police Matter
+    - Drug Activity
+    - Illegal Fireworks
+    - Real Time Enforcement
+    - Disorderly Youth
+    - Drinking
+    - Smoking
+    - Smoking or Vaping
+    - Violation of Park Rules
+    - Special Projects Inspection Team (SPIT)
+    - Emergency Response Team (ERT)
+    - Investigations and Discipline (IAD)
+
+  Animal:
+    - Dead Animal
+    - Animal-Abuse
+    - Animal in a Park
+    - Unleashed Dog
+    - Unsanitary Animal Pvt Property
+    - Illegal Animal Kept as Pet
+    - Animal Facility - No Permit
+    - Pet Shop
+
+  Business/Consumer:
+    - Consumer Complaint
+    - Vendor Enforcement
+    - Food Establishment
+    - Food Poisoning
+    - Mobile Food Vendor
+    - Outdoor Dining
+    - Graffiti
+    - Illegal Posting
+    - Day Care
+    - Retailer Complaint
+    - Tattooing

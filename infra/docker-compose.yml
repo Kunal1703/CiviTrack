@@ -58,6 +58,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-civitrack}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civitrack_dev_pw}
       POSTGRES_DB: ${POSTGRES_DB:-civitrack}
+      # Downstream ML inference service (compose service name).
+      ML_SERVICE_URL: http://ml_service:8001
     ports:
       - "${GATEWAY_PORT:-8000}:8000"
     healthcheck:
@@ -66,6 +68,30 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  ml_service:
+    build:
+      context: ../services/ml_service
+      dockerfile: Dockerfile
+    image: civitrack-ai/ml-service:0.1.0
+    container_name: civitrack-ml-service
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MODEL_DIR: /model
+      MODEL_VERSION: ${MODEL_VERSION:-classifier-v1.0}
+    volumes:
+      # Mount the trained artifact read-only (not baked into the image).
+      - ../ml/models/classification/artifacts/transformer:/model:ro
+    ports:
+      - "${ML_SERVICE_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)\""]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
 volumes:
   pgdata:

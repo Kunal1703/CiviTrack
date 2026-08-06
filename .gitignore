@@ -67,3 +67,17 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# ML model artifacts
+ml/models/**/artifacts/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+
+# MLflow
+mlruns/
+
+# HuggingFace cache
+.cache/
