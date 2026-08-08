@@ -7,21 +7,22 @@ resolution-time estimates, duplicates), **aggregates** them into spatial and
 temporal intelligence (hotspots, trends, forecasts), and **recommends** actions
 with plain-language, explainable output.
 
-> ⚠️ **Project status: under active reconstruction.** This repository is being
-> rebuilt from an earlier prototype into a production-grade AI/ML platform,
-> milestone by milestone. It is **not yet feature-complete**. See
-> [Current State](#current-state) for exactly what exists today.
+> **Project status:** **M0–M3 complete** (foundation & data, DistilBERT
+> classification, premium product UI, and semantic intelligence — all Dockerized
+> and verified end-to-end). **M4 (resolution-time regression) is next** and not
+> yet started. See [Current State](#current-state) below.
 
-The complete technical design — vision, architecture, data strategy, model
-plan, and milestone roadmap — lives in **[docs/BLUEPRINT.md](docs/BLUEPRINT.md)**.
-That document is the single source of truth; this README is the entry point.
+The complete technical design lives in **[docs/BLUEPRINT.md](docs/BLUEPRINT.md)**.
+For the **actual current state, architecture, ML results, decisions, and the M4
+starting point**, see **[docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md)** — the
+continuity reference for continuing development.
 
 ---
 
 ## Current state
 
 The project is being delivered in sequenced milestones (**M0 → M7**, see the
-blueprint). Work in progress:
+blueprint). **M0–M3 are complete and verified; M4 is next.**
 
 | Milestone | Scope | Status |
 |-----------|-------|--------|
@@ -34,18 +35,22 @@ blueprint). Work in progress:
 | M6 | Time-series volume forecasting | ⏳ planned |
 | M7 | LLM layer: summaries, recommendations, NL query | ⏳ planned |
 
-**M0 progress:** monorepo restructure ✅ · Docker/PostgreSQL + PostGIS + pgvector
-🚧 · FastAPI scaffold ⏳ · NYC 311 ingestion ⏳ · EDA ⏳.
+**Capabilities today (M0–M3):** NYC 311 data pipeline · **DistilBERT complaint
+classification** · **semantic search** · **related-complaint retrieval** ·
+**duplicate detection** (semantic + spatial-temporal gate) · **complaint
+clustering** — served via FastAPI gateway → ml_service → PostgreSQL/PostGIS/pgvector,
+with a premium Next.js frontend.
 
-### What runs today
-- **Frontend** (`frontend/`): the existing Next.js UI builds and runs, currently
-  on mock data. It will be wired to real APIs in M2.
-
+### Run it
 ```bash
-cd frontend
-pnpm install
-pnpm dev        # http://localhost:3000
+cd infra && docker compose up -d
 ```
+```bash
+cd frontend && pnpm install && pnpm dev   # http://localhost:3000
+```
+> The embedding model loads offline from a mounted HuggingFace cache
+> (`HF_CACHE` in `infra/.env`); the DistilBERT artifact is mounted read-only.
+> See [docs/PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) for full setup details.
 
 ---
 

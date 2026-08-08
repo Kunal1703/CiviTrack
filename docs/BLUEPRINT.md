@@ -1,7 +1,7 @@
 # CiviTrack AI — Intelligent Urban Complaint Management System
 ## Technical Blueprint & Architecture Roadmap
 
-> **Status:** Design document (v1.0). No implementation yet.
+> **Status:** Design document (v1.0) — the original architecture & roadmap. **M0–M3 are now implemented and verified; M4 is next.** This document remains the *design intent*; some implementation choices deliberately diverged (e.g., numbered SQL migrations instead of Alembic, LogReg baseline instead of LinearSVM, DVC not yet initialized, no Redis/MinIO/Worker/LLM services yet). **For the actual current state, see [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)** (the continuity source of truth) and the per-milestone docs (`M1_DESIGN.md`, `M3_DESIGN.md`, `M3_REPORT.md`).
 > **Author role:** Lead Architect
 > **Purpose:** Redesign the existing prototype into a flagship AI/ML/Data-Science portfolio project and a plausible smart-city decision-support platform.
 >
