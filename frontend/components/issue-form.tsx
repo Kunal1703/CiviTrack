@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label'
 import { IssueMap } from '@/components/issue-map'
 import { AiAnalysis } from '@/components/ai-analysis'
+import { DuplicateWarning } from '@/components/duplicate-warning'
 import { useClassify } from '@/hooks/use-classify'
 import { CATEGORIES } from '@/lib/categories'
 import { fadeInUp, staggerContainer } from '@/lib/motion'
@@ -112,6 +113,9 @@ export function IssueForm() {
 
           {/* Flagship live AI panel (non-blocking) */}
           <AiAnalysis status={status} result={result} applied={applied} onApply={applySuggestion} />
+
+          {/* Semantic duplicate warning (non-blocking) */}
+          <DuplicateWarning description={description} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

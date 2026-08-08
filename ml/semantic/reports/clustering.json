@@ -1,0 +1,105 @@
+{
+  "n_unique_descriptors": 776,
+  "hdbscan": {
+    "n_clusters": 14,
+    "noise_ratio": 0.8222,
+    "silhouette": 0.2044,
+    "davies_bouldin": 1.6156,
+    "size_distribution": {
+      "13": 19,
+      "12": 17,
+      "11": 13,
+      "6": 12,
+      "2": 11,
+      "4": 9,
+      "1": 9,
+      "0": 8,
+      "9": 8,
+      "7": 8,
+      "8": 8,
+      "5": 6,
+      "10": 5,
+      "3": 5
+    }
+  },
+  "kmeans_baseline": {
+    "k": 15,
+    "silhouette": 0.0424,
+    "davies_bouldin": 3.5665
+  },
+  "exemplars": {
+    "0": [
+      "Bracket Arm Bent",
+      "Branch Cracked and Will Fall",
+      "Branch or Limb Has Fallen Down",
+      "Branches Damaged"
+    ],
+    "1": [
+      "Blocked Hydrant",
+      "Hydrant Defective (WC2)",
+      "Hydrant Knocked Over/Missing (WC)",
+      "Hydrant Leaking (WC1)"
+    ],
+    "2": [
+      "Noise",
+      "Noise, Barking Dog (NR5)",
+      "Noise, Ice Cream Truck (NR4)",
+      "Noise, Other Animals (NR6)"
+    ],
+    "3": [
+      "Fixture/Luminaire Damaged",
+      "Fixture/Luminaire Door Open",
+      "Fixture/Luminaire Hanging",
+      "Fixture/Luminaire Missing"
+    ],
+    "4": [
+      "Base Door",
+      "DOOR",
+      "DOOR FRAME",
+      "DOOR/FRAME"
+    ],
+    "5": [
+      "Food Vendor",
+      "General Vendor",
+      "Non-Food Vendor",
+      "Street Fair Vendor"
+    ],
+    "6": [
+      "Bird",
+      "Cell Phone Store",
+      "Clothing, Shoe, or Accessories Store",
+      "Department Store or Megastore"
+    ],
+    "7": [
+      "Clear Street Light",
+      "Multiple Street Lights Out",
+      "Pedestrian Signal",
+      "Street Light Cycling"
+    ],
+    "8": [
+      "Lamppost Base Door/Cover Damaged",
+      "Lamppost Base Door/Cover Missing",
+      "Lamppost Damaged",
+      "Lamppost Knocked Down"
+    ],
+    "9": [
+      "Driver Complaint",
+      "Driver Complaint - Non Passenger",
+      "Driver Complaint - Passenger",
+      "Driver Report - Non Passenger"
+    ],
+    "10": [
+      "Dirty/Graffiti",
+      "Graffiti",
+      "Graffiti - Highway",
+      "PAVEMENT"
+    ],
+    "11": [
+      "Blocked Crosswalk",
+      "Blocked Sidewalk",
+      "Blocking Sidewalk",
+      "Blocking Sidewalk or Street"
+    ]
+  },
+  "limitation": "Clusters largely track the category taxonomy; interpretability is limited."
+}

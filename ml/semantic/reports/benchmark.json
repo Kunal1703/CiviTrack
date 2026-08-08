@@ -1,0 +1,28 @@
+[
+  {
+    "model": "tfidf",
+    "curated_auc": 0.951,
+    "curated_mean_sim_duplicate": 0.2111,
+    "curated_mean_sim_related": 0.0461,
+    "curated_mean_sim_different": 0.0351,
+    "synthetic_paraphrase_mean_sim": 0.767
+  },
+  {
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "curated_auc": 0.986,
+    "curated_mean_sim_duplicate": 0.7614,
+    "curated_mean_sim_related": 0.4624,
+    "curated_mean_sim_different": 0.1125,
+    "synthetic_paraphrase_mean_sim": 0.7785,
+    "dim": 384
+  },
+  {
+    "model": "BAAI/bge-small-en-v1.5",
+    "curated_auc": 1.0,
+    "curated_mean_sim_duplicate": 0.8487,
+    "curated_mean_sim_related": 0.7037,
+    "curated_mean_sim_different": 0.5065,
+    "synthetic_paraphrase_mean_sim": 0.8662,
+    "dim": 384
+  }
+]
