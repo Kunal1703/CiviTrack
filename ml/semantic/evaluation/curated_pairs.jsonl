@@ -1,0 +1,24 @@
+{"text_a": "There is no heat or hot water in my apartment for three days", "text_b": "my apartment has had no heating and no hot water for almost a week now", "label": "duplicate"}
+{"text_a": "The streetlight outside my building has been out for two weeks", "text_b": "street light in front of my house is broken and hasn't worked for days", "label": "duplicate"}
+{"text_a": "Loud music and a party next door keeping everyone awake past 2am", "text_b": "neighbors are playing extremely loud music late at night again", "label": "duplicate"}
+{"text_a": "A car has been abandoned on my street for over a month with no plates", "text_b": "there is an abandoned vehicle with no license plate parked on my block for weeks", "label": "duplicate"}
+{"text_a": "Huge pile of garbage dumped on the sidewalk that nobody collected", "text_b": "trash and garbage bags left on the sidewalk have not been picked up", "label": "duplicate"}
+{"text_a": "Water is leaking from the ceiling and the pipe seems burst", "text_b": "a pipe burst and water is pouring down from my ceiling", "label": "duplicate"}
+{"text_a": "Rats running around the back of the building near the bins", "text_b": "I keep seeing rodents and rats near the garbage area behind the building", "label": "duplicate"}
+{"text_a": "The elevator in our building has been broken and stuck for days", "text_b": "our building elevator is out of service and has not been fixed", "label": "duplicate"}
+{"text_a": "Raw sewage is backing up into the basement and it smells terrible", "text_b": "sewage is overflowing into the basement with a horrible smell", "label": "duplicate"}
+{"text_a": "The streetlight on my block has been out for two weeks", "text_b": "a different streetlight two neighborhoods away keeps flickering at night", "label": "related"}
+{"text_a": "There is a large pothole on Main Street near the traffic signal", "text_b": "the road on Elm Avenue is cracked and has several potholes", "label": "related"}
+{"text_a": "No heat in my apartment building this winter", "text_b": "the hot water in my building runs out too quickly in the mornings", "label": "related"}
+{"text_a": "Garbage overflowing from the bins near the park", "text_b": "someone illegally dumped construction debris on an empty lot", "label": "related"}
+{"text_a": "Noise complaint about a loud party next door", "text_b": "a bar down the street plays loud music every weekend", "label": "related"}
+{"text_a": "Abandoned car on my street with flat tires", "text_b": "someone is always illegally parked blocking my driveway", "label": "related"}
+{"text_a": "The streetlight outside my house is broken", "text_b": "there is a dead animal on the side of the highway", "label": "different"}
+{"text_a": "No heat and no hot water in my apartment", "text_b": "loud music from the neighbors late at night", "label": "different"}
+{"text_a": "A pothole damaged my car tire on the main road", "text_b": "rats are getting into the trash behind the restaurant", "label": "different"}
+{"text_a": "Garbage piling up on the sidewalk for days", "text_b": "the traffic light at the intersection is not working", "label": "different"}
+{"text_a": "Water leaking from a burst pipe in the wall", "text_b": "someone is aggressively panhandling at the subway entrance", "label": "different"}
+{"text_a": "Sewage backing up into the basement", "text_b": "illegal fireworks being set off every night", "label": "different"}
+{"text_a": "Broken elevator in the apartment building", "text_b": "overgrown tree branches hanging over the sidewalk", "label": "different"}
+{"text_a": "Streetlight has been out for two weeks near the school", "text_b": "the street lamp by the school entrance stopped working recently", "label": "duplicate"}
+{"text_a": "Illegal dumping of trash on the empty lot", "text_b": "people keep dumping old furniture and bags on the vacant lot", "label": "duplicate"}

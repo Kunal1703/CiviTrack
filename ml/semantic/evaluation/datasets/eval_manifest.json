@@ -1,0 +1,19 @@
+{
+  "seed": 42,
+  "source_column": "descriptor",
+  "dup_radius_m": 150.0,
+  "dup_time_hours": 72.0,
+  "counts": {
+    "positives_derived_real": 400,
+    "negatives_same_category_far": 300,
+    "negatives_different": 300,
+    "retrieval_queries": 400,
+    "synthetic_positives": 150
+  },
+  "provenance": [
+    "derived-real",
+    "curated",
+    "synthetic"
+  ],
+  "note": "Synthetic pairs are a supplementary benchmark, NOT real-world ground truth."
+}
