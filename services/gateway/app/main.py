@@ -10,7 +10,7 @@ from fastapi import FastAPI
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
-from app.routers import classify, system
+from app.routers import classify, semantic, system
 
 
 def create_app() -> FastAPI:
@@ -26,6 +26,7 @@ def create_app() -> FastAPI:
 
     app.include_router(system.router)
     app.include_router(classify.router)
+    app.include_router(semantic.router)
 
     @app.get("/", tags=["system"])
     def root() -> dict[str, str]:
