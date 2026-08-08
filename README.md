@@ -25,10 +25,10 @@ blueprint). Work in progress:
 
 | Milestone | Scope | Status |
 |-----------|-------|--------|
-| **M0** | Foundation: monorepo, Docker/Postgres infra, FastAPI scaffold, NYC 311 data pipeline, EDA | 🚧 **in progress** |
-| M1 | Anchor NLP classifier served end-to-end | ⏳ planned |
-| M2 | Frontend on real APIs + auth | ⏳ planned |
-| M3 | Transformer NLP + embedding backbone (duplicates/search) | ⏳ planned |
+| **M0** | Foundation: monorepo, Docker/Postgres infra, FastAPI scaffold, NYC 311 data pipeline, EDA | ✅ complete |
+| **M1** | DistilBERT complaint classifier served end-to-end (ml_service + gateway) | ✅ complete |
+| **M2** | Premium frontend on real AI APIs (design system, live classification) | ✅ complete |
+| **M3** | Semantic intelligence: embeddings, pgvector search, duplicate detection, clustering | ✅ complete |
 | M4 | Resolution-time regression + SHAP explainability | ⏳ planned |
 | M5 | Geospatial clustering + statistical hotspots | ⏳ planned |
 | M6 | Time-series volume forecasting | ⏳ planned |
