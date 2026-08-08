@@ -7,6 +7,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { StatusBadge, PriorityBadge, CategoryBadge } from '@/components/status-badge'
+import { RelatedComplaints } from '@/components/related-complaints'
 import { IssueMap } from '@/components/issue-map'
 import { mockIssues } from '@/lib/mock-data'
 import {
@@ -244,6 +245,13 @@ export default function IssueDetailPage({ params }: IssueDetailPageProps) {
                   <span className="text-primary">Yes</span>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Related complaints (semantic retrieval) */}
+          <Card>
+            <CardContent className="pt-6">
+              <RelatedComplaints text={`${issue.title}. ${issue.description}`} />
             </CardContent>
           </Card>
         </div>

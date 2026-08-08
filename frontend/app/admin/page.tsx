@@ -19,7 +19,8 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { StatusBadge, PriorityBadge } from '@/components/status-badge'
-import { PageContainer, PageHeader, StatCard, StatGrid } from '@/components/ui-kit'
+import { PageContainer, PageHeader, StatCard, StatGrid, Reveal } from '@/components/ui-kit'
+import { SemanticSearch } from '@/components/semantic-search'
 import { mockIssues, mockSummaryStats } from '@/lib/mock-data'
 import type { IssueStatus, Issue } from '@/lib/types'
 import {
@@ -35,6 +36,7 @@ import {
   Inbox,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react'
 
 const PAGE_SIZE = 6
@@ -253,6 +255,24 @@ export default function AdminPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Semantic explorer */}
+      <Reveal className="mt-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Semantic explorer
+            </CardTitle>
+            <CardDescription>
+              Search the complaint corpus by meaning to inspect related reports and semantic groups.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SemanticSearch placeholder="e.g. broken street lights around schools" />
+          </CardContent>
+        </Card>
+      </Reveal>
     </PageContainer>
   )
 }

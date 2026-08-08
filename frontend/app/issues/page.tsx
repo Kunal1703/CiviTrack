@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PageContainer, PageHeader, Reveal } from '@/components/ui-kit'
+import { SemanticSearch } from '@/components/semantic-search'
 import { mockIssues, mockCategories } from '@/lib/mock-data'
 import type { IssueStatus, IssuePriority } from '@/lib/types'
 import {
@@ -24,6 +25,7 @@ import {
   Grid3X3,
   List,
   X,
+  Sparkles,
 } from 'lucide-react'
 
 export default function IssuesPage() {
@@ -98,6 +100,21 @@ export default function IssuesPage() {
         title="Browse issues"
         description="Search and filter reported civic issues across your city."
       />
+
+      {/* AI semantic search */}
+      <Reveal className="mb-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-primary" />
+              AI semantic search
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SemanticSearch />
+          </CardContent>
+        </Card>
+      </Reveal>
 
       {/* Filters */}
       <Card className="mb-8">
