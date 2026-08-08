@@ -3,34 +3,26 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Navbar } from '@/components/navbar'
 import { Toaster } from '@/components/ui/sonner'
+import { Providers } from './providers'
 import './globals.css'
 
-const _geist = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
 
 export const metadata: Metadata = {
   title: {
-    default: 'CiviTrack - Smart Urban Issue Detection',
-    template: '%s | CiviTrack',
+    default: 'CiviTrack AI — Intelligent Urban Complaint Management',
+    template: '%s | CiviTrack AI',
   },
   description:
-    'Report and track civic issues in your city. CiviTrack uses AI to categorize issues and detect problem hotspots for faster resolution.',
-  keywords: ['civic', 'issues', 'reporting', 'city', 'urban', 'potholes', 'garbage', 'streetlight'],
-  authors: [{ name: 'CiviTrack Team' }],
+    'AI-powered civic complaint management. Report issues and let CiviTrack AI classify, prioritize, and route them in real time.',
+  keywords: ['civic', 'AI', 'smart city', 'complaints', 'classification', 'urban', 'analytics'],
+  authors: [{ name: 'CiviTrack AI' }],
   icons: {
     icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
+      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
     ],
     apple: '/apple-icon.png',
   },
@@ -39,23 +31,25 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: dark)', color: '#0b1020' },
   ],
   width: 'device-width',
   initialScale: 1,
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Toaster />
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geist.variable} ${geistMono.variable}`}
+    >
+      <body className="font-sans antialiased min-h-screen flex flex-col bg-background text-foreground">
+        <Providers>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Toaster richColors position="top-center" />
+        </Providers>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

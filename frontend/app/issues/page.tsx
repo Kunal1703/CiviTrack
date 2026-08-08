@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PageContainer, PageHeader, Reveal } from '@/components/ui-kit'
 import { mockIssues, mockCategories } from '@/lib/mock-data'
 import type { IssueStatus, IssuePriority } from '@/lib/types'
 import {
@@ -91,15 +92,12 @@ export default function IssuesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          All Issues
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          Browse and filter reported civic issues in your area
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        icon={List}
+        title="Browse issues"
+        description="Search and filter reported civic issues across your city."
+      />
 
       {/* Filters */}
       <Card className="mb-8">
@@ -235,8 +233,10 @@ export default function IssuesPage() {
               : 'flex flex-col gap-4'
           }
         >
-          {filteredIssues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} showFullDescription={viewMode === 'list'} />
+          {filteredIssues.map((issue, i) => (
+            <Reveal key={issue.id} delay={Math.min(i, 6) * 0.05}>
+              <IssueCard issue={issue} showFullDescription={viewMode === 'list'} />
+            </Reveal>
           ))}
         </div>
       ) : (
@@ -253,6 +253,6 @@ export default function IssuesPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   )
 }

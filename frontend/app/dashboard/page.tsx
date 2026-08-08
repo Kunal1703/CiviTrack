@@ -1,11 +1,13 @@
 'use client'
 
-import type { Metadata } from 'next'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { StatsCard, StatsGrid } from '@/components/stats-card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CategoryBarChart, StatusPieChart } from '@/components/category-chart'
 import { TrendLineChart } from '@/components/trend-chart'
 import { HotspotMap } from '@/components/hotspot-map'
+import { PageContainer, PageHeader, StatCard, StatGrid, Reveal, SectionHeader } from '@/components/ui-kit'
+import { AnimatedNumber } from '@/components/animated-number'
 import {
   mockSummaryStats,
   mockCategoryStats,
@@ -20,156 +22,127 @@ import {
   Loader2,
   TrendingUp,
   Timer,
-  AlertTriangle,
+  MapPinned,
+  Brain,
+  Gauge,
   Sparkles,
 } from 'lucide-react'
 
-// Mock status stats
 const mockStatusStats = [
   { status: 'pending' as const, count: 4, high_priority: 2, medium_priority: 1, low_priority: 1 },
   { status: 'in_progress' as const, count: 3, high_priority: 1, medium_priority: 1, low_priority: 1 },
   { status: 'resolved' as const, count: 1, high_priority: 1, medium_priority: 0, low_priority: 0 },
 ]
 
+const aiMetrics = [
+  { label: 'Predictions served', value: 1284, icon: Brain, accent: 'primary' as const },
+  { label: 'Avg. confidence', value: 87, suffix: '%', icon: Gauge, accent: 'success' as const },
+  { label: 'Auto-classified', value: 94, suffix: '%', icon: Sparkles, accent: 'accent' as const },
+]
+
 export default function DashboardPage() {
   const stats = mockSummaryStats
-  const categoryStats = mockCategoryStats
-  const statusStats = mockStatusStats
-  const trends = mockTrends
-  const hotspots = mockHotspots
-  const locations = mockIssueLocations
+  const [range, setRange] = useState('30')
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <BarChart3 className="h-6 w-6 text-primary-foreground" />
+    <PageContainer>
+      <PageHeader
+        icon={BarChart3}
+        title="Analytics Dashboard"
+        description="Real-time insight into complaints, categories, and AI performance."
+        actions={
+          <Select value={range} onValueChange={setRange}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+        }
+      />
+
+      {/* KPIs */}
+      <StatGrid className="mb-6">
+        <StatCard label="Total issues" value={stats.total_issues} sublabel="All time reports" icon={TrendingUp} accent="primary" index={0} />
+        <StatCard label="Pending" value={stats.pending} sublabel="Awaiting action" icon={Clock} accent="warning" index={1} />
+        <StatCard label="In progress" value={stats.in_progress} sublabel="Being addressed" icon={Loader2} accent="accent" index={2} />
+        <StatCard label="Resolved" value={stats.resolved} sublabel={`${stats.resolved_today} today`} icon={CheckCircle2} accent="success" index={3} />
+      </StatGrid>
+
+      {/* AI usage */}
+      <Reveal className="mb-8">
+        <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/[0.05] to-accent/[0.04] p-5 shadow-premium">
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold tracking-tight">AI performance</h2>
+            <span className="ml-auto rounded-full border border-border bg-background/60 px-2 py-0.5 text-[11px] text-muted-foreground">
+              DistilBERT · classifier-v1.0
+            </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Analytics Dashboard
-          </h1>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {aiMetrics.map((m) => (
+              <div key={m.label} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-4">
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <m.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <div className="text-2xl font-bold tabular-nums">
+                    <AnimatedNumber value={m.value} suffix={m.suffix ?? ''} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{m.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <p className="mt-2 text-muted-foreground">
-          Insights and statistics about civic issues in your area
-        </p>
+      </Reveal>
+
+      {/* Secondary metrics */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        {[
+          { label: 'Avg. resolution time', value: stats.avg_resolution_hours, suffix: 'h', icon: Timer },
+          { label: 'New today', value: stats.new_today, suffix: '', icon: Clock },
+          { label: 'Hotspot areas', value: mockHotspots.length, suffix: '', icon: MapPinned },
+        ].map((m, i) => (
+          <Reveal key={m.label} delay={i * 0.06}>
+            <Card className="hover-lift">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{m.label}</CardTitle>
+                <m.icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold tabular-nums">
+                  <AnimatedNumber value={m.value} suffix={m.suffix} />
+                </div>
+              </CardContent>
+            </Card>
+          </Reveal>
+        ))}
       </div>
 
-      {/* Overview Stats */}
-      <section className="mb-8">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Overview</h2>
-        <StatsGrid>
-          <StatsCard
-            title="Total Issues"
-            value={stats.total_issues}
-            description="All time reports"
-            icon={TrendingUp}
-            variant="primary"
-          />
-          <StatsCard
-            title="Pending"
-            value={stats.pending}
-            description="Awaiting action"
-            icon={Clock}
-            variant="warning"
-          />
-          <StatsCard
-            title="In Progress"
-            value={stats.in_progress}
-            description="Currently being addressed"
-            icon={Loader2}
-            variant="primary"
-          />
-          <StatsCard
-            title="Resolved"
-            value={stats.resolved}
-            description={`${stats.resolved_today} resolved today`}
-            icon={CheckCircle2}
-            variant="success"
-          />
-        </StatsGrid>
-      </section>
+      {/* Charts */}
+      <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <Reveal><CategoryBarChart data={mockCategoryStats} /></Reveal>
+        <Reveal delay={0.06}><StatusPieChart data={mockStatusStats} /></Reveal>
+      </div>
 
-      {/* Secondary Stats */}
-      <section className="mb-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Avg. Resolution Time
-              </CardTitle>
-              <Timer className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {stats.avg_resolution_hours}h
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Average time to resolve issues
-              </p>
-            </CardContent>
-          </Card>
+      <Reveal className="mb-8">
+        <TrendLineChart data={mockTrends} />
+      </Reveal>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                New Today
-              </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {stats.new_today}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Issues reported today
-              </p>
-            </CardContent>
-          </Card>
+      <Reveal className="mb-8">
+        <HotspotMap locations={mockIssueLocations} hotspots={mockHotspots} />
+      </Reveal>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Hotspot Areas
-              </CardTitle>
-              <Sparkles className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {hotspots.length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Areas with concentrated issues
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Charts Row 1 */}
-      <section className="mb-8 grid gap-6 lg:grid-cols-2">
-        <CategoryBarChart data={categoryStats} />
-        <StatusPieChart data={statusStats} />
-      </section>
-
-      {/* Trends */}
-      <section className="mb-8">
-        <TrendLineChart data={trends} />
-      </section>
-
-      {/* Map */}
-      <section className="mb-8">
-        <HotspotMap locations={locations} hotspots={hotspots} />
-      </section>
-
-      {/* Category Breakdown Table */}
-      <section>
+      {/* Category breakdown */}
+      <Reveal>
         <Card>
           <CardHeader>
-            <CardTitle>Category Breakdown</CardTitle>
-            <CardDescription>
-              Detailed statistics by issue category
-            </CardDescription>
+            <CardTitle>Category breakdown</CardTitle>
+            <CardDescription>Detailed statistics by issue category</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -177,55 +150,28 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="py-3 pr-4 text-left font-medium text-muted-foreground">Category</th>
-                    <th className="py-3 px-4 text-right font-medium text-muted-foreground">Total</th>
-                    <th className="py-3 px-4 text-right font-medium text-muted-foreground">Pending</th>
-                    <th className="py-3 px-4 text-right font-medium text-muted-foreground">In Progress</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">Pending</th>
+                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">In Progress</th>
                     <th className="py-3 pl-4 text-right font-medium text-muted-foreground">Resolved</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {categoryStats.filter(c => c.count > 0).map((category) => (
-                    <tr key={category.id} className="border-b border-border last:border-0">
-                      <td className="py-3 pr-4 font-medium text-foreground">
-                        {category.name}
-                      </td>
-                      <td className="py-3 px-4 text-right text-foreground">
-                        {category.count}
-                      </td>
-                      <td className="py-3 px-4 text-right text-[var(--status-pending)]">
-                        {category.pending}
-                      </td>
-                      <td className="py-3 px-4 text-right text-[var(--status-in-progress)]">
-                        {category.in_progress}
-                      </td>
-                      <td className="py-3 pl-4 text-right text-[var(--status-resolved)]">
-                        {category.resolved}
-                      </td>
+                  {mockCategoryStats.filter((c) => c.count > 0).map((c) => (
+                    <tr key={c.id} className="border-b border-border transition-colors last:border-0 hover:bg-muted/40">
+                      <td className="py-3 pr-4 font-medium text-foreground">{c.name}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{c.count}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[var(--status-pending)]">{c.pending}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-[var(--status-in-progress)]">{c.in_progress}</td>
+                      <td className="py-3 pl-4 text-right tabular-nums text-[var(--status-resolved)]">{c.resolved}</td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="bg-muted/50">
-                    <td className="py-3 pr-4 font-semibold text-foreground">Total</td>
-                    <td className="py-3 px-4 text-right font-semibold text-foreground">
-                      {categoryStats.reduce((acc, c) => acc + c.count, 0)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-[var(--status-pending)]">
-                      {categoryStats.reduce((acc, c) => acc + c.pending, 0)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold text-[var(--status-in-progress)]">
-                      {categoryStats.reduce((acc, c) => acc + c.in_progress, 0)}
-                    </td>
-                    <td className="py-3 pl-4 text-right font-semibold text-[var(--status-resolved)]">
-                      {categoryStats.reduce((acc, c) => acc + c.resolved, 0)}
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </CardContent>
         </Card>
-      </section>
-    </div>
+      </Reveal>
+    </PageContainer>
   )
 }
