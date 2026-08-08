@@ -73,17 +73,28 @@ services:
     build:
       context: ../services/ml_service
       dockerfile: Dockerfile
-    image: civitrack-ai/ml-service:0.1.0
+    image: civitrack-ai/ml-service:0.2.0
     container_name: civitrack-ml-service
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       MODEL_DIR: /model
       MODEL_VERSION: ${MODEL_VERSION:-classifier-v1.0}
+      # Semantic (M3): vector-search DB + embedding model (loaded offline from cache)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-civitrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civitrack_dev_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-civitrack}
     volumes:
-      # Mount the trained artifact read-only (not baked into the image).
+      # Trained classifier artifact (read-only).
       - ../ml/models/classification/artifacts/transformer:/model:ro
+      # HuggingFace cache (embedding model) — offline use, no in-container download.
+      - ${HF_CACHE}:/home/appuser/.cache/huggingface:ro
     ports:
       - "${ML_SERVICE_PORT:-8001}:8001"
     healthcheck:
@@ -91,7 +102,7 @@ services:
       interval: 20s
       timeout: 5s
       retries: 5
-      start_period: 40s
+      start_period: 90s
 
 volumes:
   pgdata:
