@@ -122,6 +122,8 @@ def main() -> None:
         "borough": sorted(vocab["borough"].keys()),
         "complaint_type": tr["complaint_type"].value_counts().head(40).index.tolist(),
     }, indent=2))
+    # Global SHAP drivers (mounted with the model, so serving /meta can expose them).
+    (config.ARTIFACT_DIR / "shap_global.json").write_text(json.dumps(shap_global, indent=2))
 
     # ── Summary ──
     print("\n==== M4 RESULTS (time-based test set) ====")

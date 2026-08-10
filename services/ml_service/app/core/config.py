@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     max_length: int = 32
     top_k: int = 3
 
+    # ── Resolution-time regressor (M4) ──
+    resolution_model_dir: str = "./resolution_model"
+    resolution_version: str = "resolution-v1"
+
     # ── Semantic (M3) ──
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_version: str = "v1"
