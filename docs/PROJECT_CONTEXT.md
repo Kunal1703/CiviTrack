@@ -9,6 +9,18 @@
 
 ---
 
+> **Product/UX upgrade (application layer, post-M3 — NOT M4).** On top of the
+> completed ML milestones, CiviTrack AI was evolved into a **role-based two-sided
+> platform**: real auth (argon2 + JWT httpOnly cookies, citizen/admin roles in a new
+> `app` schema), a citizen experience (`/citizen/*`), an admin operations workspace
+> (`/admin/*`), a scrollytelling public landing (`/`), a developer showcase
+> (`/architecture`), and a **Delhi-based product experience** using clearly-labeled
+> **seeded demo data** (never NYC relabeled as Delhi). This added no new ML — M1/M3
+> are reused unchanged; M4 remains unstarted. **See [`PRODUCT_UX.md`](PRODUCT_UX.md)
+> for the full role model, auth architecture, information architecture, `app`-schema
+> DB changes, the NYC-vs-Delhi dataset boundary, map/hotspot logic, and the UI/UX +
+> animation strategy.**
+
 ## 1. Project overview
 **CiviTrack AI** is an end-to-end AI/ML-powered civic-complaint intelligence platform built on **real NYC 311 open data**. It turns raw complaints into: automatic **classification**, **semantic search**, **related-complaint discovery**, and **duplicate detection** (with more milestones planned: resolution-time regression, geospatial intelligence, forecasting, LLM/RAG).
 
