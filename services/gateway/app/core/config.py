@@ -40,6 +40,21 @@ class Settings(BaseSettings):
     ml_service_url: str = "http://localhost:8001"
     ml_service_timeout: float = 10.0
 
+    # ── Auth / sessions ──
+    # HS256 secret for signing JWTs. MUST be overridden in any non-dev environment
+    # (compose passes JWT_SECRET). The default exists only so local dev boots.
+    jwt_secret: str = "dev-insecure-change-me"
+    jwt_algorithm: str = "HS256"
+    access_token_minutes: int = 30
+    refresh_token_days: int = 7
+    # Cookie flags: Secure requires HTTPS, so it stays off in local dev.
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"
+    cookie_domain: str | None = None
+    # Optional invite code that lets a registration create an admin account.
+    # Empty string disables self-service admin signup entirely.
+    admin_signup_code: str = ""
+
     @property
     def database_url(self) -> str:
         """SQLAlchemy/psycopg-style DSN. Contains the password — never log this."""

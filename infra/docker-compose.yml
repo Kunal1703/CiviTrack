@@ -60,6 +60,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-civitrack}
       # Downstream ML inference service (compose service name).
       ML_SERVICE_URL: http://ml_service:8001
+      # Auth / sessions (product/UX upgrade). JWT_SECRET MUST be set to a strong
+      # value outside local dev. ADMIN_SIGNUP_CODE (if set) lets a registration
+      # provision an admin; empty disables self-service admin signup.
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-change-me}
+      ADMIN_SIGNUP_CODE: ${ADMIN_SIGNUP_CODE:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       - "${GATEWAY_PORT:-8000}:8000"
     healthcheck:
