@@ -12,13 +12,20 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { Home, Plus, List, BarChart3, Shield, Sun, Moon } from 'lucide-react'
+import { useAuth } from '@/components/auth-provider'
+import {
+  Home, Plus, List, BarChart3, Shield, Sun, Moon, MapPin, ClipboardList, LogIn,
+  UserPlus, Cpu, LogOut,
+} from 'lucide-react'
 
-/** Global ⌘K / Ctrl+K command palette. Also opens on a `command-palette:open` event. */
+type Item = { label: string; href?: string; icon: React.ComponentType<{ className?: string }>; action?: () => void }
+
+/** Global ⌘K / Ctrl+K command palette. Role-aware navigation. */
 export function CommandPalette() {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   const { setTheme, resolvedTheme } = useTheme()
+  const { user, logout } = useAuth()
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,26 +48,40 @@ export function CommandPalette() {
     router.push(href)
   }
 
+  const nav: Item[] =
+    user?.role === 'admin'
+      ? [
+          { label: 'Overview', href: '/admin', icon: Shield },
+          { label: 'Issue queue', href: '/admin/issues', icon: List },
+          { label: 'Issue map', href: '/admin/map', icon: MapPin },
+          { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+        ]
+      : user?.role === 'citizen'
+        ? [
+            { label: 'Home', href: '/citizen', icon: Home },
+            { label: 'Report an issue', href: '/citizen/report', icon: Plus },
+            { label: 'My reports', href: '/citizen/reports', icon: ClipboardList },
+            { label: 'Nearby', href: '/citizen/nearby', icon: MapPin },
+          ]
+        : [
+            { label: 'Home', href: '/', icon: Home },
+            { label: 'Sign in', href: '/login', icon: LogIn },
+            { label: 'Create account', href: '/register', icon: UserPlus },
+          ]
+
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder="Type a command or search…" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Navigate">
-          <CommandItem onSelect={() => go('/')}>
-            <Home className="mr-2 h-4 w-4" /> Home
-          </CommandItem>
-          <CommandItem onSelect={() => go('/report')}>
-            <Plus className="mr-2 h-4 w-4" /> Report an issue
-          </CommandItem>
-          <CommandItem onSelect={() => go('/issues')}>
-            <List className="mr-2 h-4 w-4" /> Browse issues
-          </CommandItem>
-          <CommandItem onSelect={() => go('/dashboard')}>
-            <BarChart3 className="mr-2 h-4 w-4" /> Analytics dashboard
-          </CommandItem>
-          <CommandItem onSelect={() => go('/admin')}>
-            <Shield className="mr-2 h-4 w-4" /> Operations console
+          {nav.map((item) => (
+            <CommandItem key={item.label} onSelect={() => go(item.href!)}>
+              <item.icon className="mr-2 h-4 w-4" /> {item.label}
+            </CommandItem>
+          ))}
+          <CommandItem onSelect={() => go('/architecture')}>
+            <Cpu className="mr-2 h-4 w-4" /> How it’s built
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
@@ -74,6 +95,17 @@ export function CommandPalette() {
             {resolvedTheme === 'dark' ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
             Toggle theme
           </CommandItem>
+          {user && (
+            <CommandItem
+              onSelect={async () => {
+                setOpen(false)
+                await logout()
+                router.replace('/')
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" /> Sign out
+            </CommandItem>
+          )}
         </CommandGroup>
       </CommandList>
     </CommandDialog>
