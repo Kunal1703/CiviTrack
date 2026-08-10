@@ -1,0 +1,267 @@
+{
+  "model_version": "resolution-v1",
+  "n_closed": 200180,
+  "target_p50_hours": 7.24,
+  "split": {
+    "train": 133497,
+    "val": 16744,
+    "test": 49939,
+    "val_start": "2024-09-01",
+    "test_start": "2024-10-01"
+  },
+  "time_split": {
+    "baseline_global_median": {
+      "mae_h": 275.88,
+      "rmse_h": 1031.01,
+      "medae_h": 8.19
+    },
+    "baseline_agency_category_median": {
+      "mae_h": 238.23,
+      "rmse_h": 917.72,
+      "medae_h": 9.34
+    },
+    "lightgbm_q50": {
+      "mae_h": 224.96,
+      "rmse_h": 868.52,
+      "medae_h": 8.31
+    },
+    "lightgbm_log_scale": {
+      "mae_log": 0.8261,
+      "rmse_log": 1.2048
+    },
+    "interval_80_raw_quantile": {
+      "coverage_80": 0.699,
+      "median_width_h": 56.13
+    },
+    "interval_80_conformalized": {
+      "coverage_80": 0.7428,
+      "median_width_h": 60.56
+    },
+    "conformal_delta_log": 0.0576,
+    "mape_ge1h_pct": 183.3,
+    "mae_by_slice": {
+      "agency": [
+        {
+          "key": "NYPD",
+          "n": 21535,
+          "mae_h": 3.61
+        },
+        {
+          "key": "HPD",
+          "n": 12286,
+          "mae_h": 283.37
+        },
+        {
+          "key": "DSNY",
+          "n": 4983,
+          "mae_h": 76.71
+        },
+        {
+          "key": "DEP",
+          "n": 2891,
+          "mae_h": 156.61
+        },
+        {
+          "key": "DOT",
+          "n": 2758,
+          "mae_h": 241.07
+        },
+        {
+          "key": "DOB",
+          "n": 1612,
+          "mae_h": 1342.47
+        },
+        {
+          "key": "DPR",
+          "n": 1258,
+          "mae_h": 1418.11
+        },
+        {
+          "key": "DOHMH",
+          "n": 1167,
+          "mae_h": 912.05
+        },
+        {
+          "key": "TLC",
+          "n": 454,
+          "mae_h": 1023.48
+        },
+        {
+          "key": "DHS",
+          "n": 448,
+          "mae_h": 191.28
+        }
+      ],
+      "complaint_type": [
+        {
+          "key": "Illegal Parking",
+          "n": 7225,
+          "mae_h": 2.74
+        },
+        {
+          "key": "HEAT/HOT WATER",
+          "n": 5448,
+          "mae_h": 21.83
+        },
+        {
+          "key": "Noise - Residential",
+          "n": 5411,
+          "mae_h": 6.21
+        },
+        {
+          "key": "Blocked Driveway",
+          "n": 2455,
+          "mae_h": 3.49
+        },
+        {
+          "key": "Noise - Street/Sidewalk",
+          "n": 1865,
+          "mae_h": 2.29
+        },
+        {
+          "key": "UNSANITARY CONDITION",
+          "n": 1810,
+          "mae_h": 491.95
+        },
+        {
+          "key": "Abandoned Vehicle",
+          "n": 1085,
+          "mae_h": 3.8
+        },
+        {
+          "key": "PLUMBING",
+          "n": 956,
+          "mae_h": 478.45
+        },
+        {
+          "key": "PAINT/PLASTER",
+          "n": 908,
+          "mae_h": 339.44
+        },
+        {
+          "key": "Dirty Condition",
+          "n": 903,
+          "mae_h": 18.55
+        }
+      ],
+      "borough": [
+        {
+          "key": "BROOKLYN",
+          "n": 15507,
+          "mae_h": 186.97
+        },
+        {
+          "key": "QUEENS",
+          "n": 12024,
+          "mae_h": 270.1
+        },
+        {
+          "key": "BRONX",
+          "n": 10386,
+          "mae_h": 170.31
+        },
+        {
+          "key": "MANHATTAN",
+          "n": 10378,
+          "mae_h": 274.24
+        },
+        {
+          "key": "STATEN ISLAND",
+          "n": 1608,
+          "mae_h": 279.9
+        }
+      ],
+      "created_month": [
+        {
+          "key": "2024-12",
+          "n": 16825,
+          "mae_h": 268.4
+        },
+        {
+          "key": "2024-10",
+          "n": 16565,
+          "mae_h": 212.15
+        },
+        {
+          "key": "2024-11",
+          "n": 16549,
+          "mae_h": 193.62
+        }
+      ]
+    }
+  },
+  "random_split_sanity": {
+    "lightgbm_q50": {
+      "mae_h": 186.09,
+      "rmse_h": 862.72,
+      "medae_h": 3.22
+    },
+    "interval_80_conformalized": {
+      "coverage_80": 0.8022,
+      "median_width_h": 31.1
+    }
+  },
+  "shap_global": [
+    {
+      "feature": "complaint_type",
+      "mean_abs_shap": 1.5587
+    },
+    {
+      "feature": "descriptor",
+      "mean_abs_shap": 0.2737
+    },
+    {
+      "feature": "agency",
+      "mean_abs_shap": 0.169
+    },
+    {
+      "feature": "incident_zip",
+      "mean_abs_shap": 0.1174
+    },
+    {
+      "feature": "month",
+      "mean_abs_shap": 0.0519
+    },
+    {
+      "feature": "dow",
+      "mean_abs_shap": 0.03
+    },
+    {
+      "feature": "hour",
+      "mean_abs_shap": 0.0158
+    },
+    {
+      "feature": "hour_cos",
+      "mean_abs_shap": 0.015
+    },
+    {
+      "feature": "hour_sin",
+      "mean_abs_shap": 0.0142
+    },
+    {
+      "feature": "dow_cos",
+      "mean_abs_shap": 0.0118
+    },
+    {
+      "feature": "dow_sin",
+      "mean_abs_shap": 0.0106
+    },
+    {
+      "feature": "month_cos",
+      "mean_abs_shap": 0.0096
+    },
+    {
+      "feature": "longitude",
+      "mean_abs_shap": 0.0088
+    },
+    {
+      "feature": "month_sin",
+      "mean_abs_shap": 0.0081
+    },
+    {
+      "feature": "latitude",
+      "mean_abs_shap": 0.0065
+    }
+  ],
+  "wall_seconds": 189.6
+}
