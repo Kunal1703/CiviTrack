@@ -1,13 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { checkDuplicate, type DuplicateResponse } from '@/lib/semantic-api'
+import { checkDuplicate, type Dataset, type DuplicateResponse } from '@/lib/semantic-api'
 
 export type DupStatus = 'idle' | 'checking' | 'done' | 'error'
 
-/** Debounced, cancellable, non-blocking duplicate check (mirrors useClassify). */
-export function useDuplicateCheck(text: string, opts: { minChars?: number; debounceMs?: number } = {}) {
-  const { minChars = 25, debounceMs = 700 } = opts
+interface Options {
+  minChars?: number
+  debounceMs?: number
+  dataset?: Dataset
+  latitude?: number | null
+  longitude?: number | null
+}
+
+/** Debounced, cancellable, non-blocking duplicate check (mirrors useClassify).
+ *  Dataset defaults to the NYC corpus; the citizen flow passes 'delhi' + coords
+ *  so the spatial-temporal gate runs against Delhi community complaints. */
+export function useDuplicateCheck(text: string, opts: Options = {}) {
+  const { minChars = 25, debounceMs = 700, dataset = 'nyc', latitude, longitude } = opts
   const [status, setStatus] = useState<DupStatus>('idle')
   const [result, setResult] = useState<DuplicateResponse | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -25,7 +35,7 @@ export function useDuplicateCheck(text: string, opts: { minChars?: number; debou
       const ctrl = new AbortController()
       abortRef.current = ctrl
       setStatus('checking')
-      checkDuplicate(t, undefined, undefined, ctrl.signal)
+      checkDuplicate(t, latitude ?? undefined, longitude ?? undefined, dataset, ctrl.signal)
         .then((r) => {
           setResult(r)
           setStatus('done')
@@ -36,7 +46,7 @@ export function useDuplicateCheck(text: string, opts: { minChars?: number; debou
         })
     }, debounceMs)
     return () => clearTimeout(timer)
-  }, [text, minChars, debounceMs])
+  }, [text, minChars, debounceMs, dataset, latitude, longitude])
 
   return { status, result }
 }

@@ -1,11 +1,15 @@
 // CiviTrack AI — semantic API client (M3). Same-origin /api proxy → gateway.
 
+export type Dataset = 'nyc' | 'delhi'
+
 export interface Neighbor {
   complaint_id: string
   category?: string | null
   similarity: number
   text: string
   borough?: string | null
+  location?: string | null
+  status?: string | null
   created_at?: string | null
 }
 
@@ -37,15 +41,31 @@ async function post<T>(path: string, body: unknown, signal?: AbortSignal): Promi
   return res.json() as Promise<T>
 }
 
-export function semanticSearch(query: string, topK = 8, category?: string, signal?: AbortSignal) {
-  return post<SearchResponse>('/search', { query, top_k: topK, category }, signal)
+export function semanticSearch(
+  query: string,
+  topK = 8,
+  category?: string,
+  dataset: Dataset = 'nyc',
+  signal?: AbortSignal,
+) {
+  return post<SearchResponse>('/search', { query, top_k: topK, category, dataset }, signal)
 }
 
 export function checkDuplicate(
   description: string,
   latitude?: number,
   longitude?: number,
+  dataset: Dataset = 'nyc',
   signal?: AbortSignal,
 ) {
-  return post<DuplicateResponse>('/duplicate-check', { description, latitude, longitude }, signal)
+  return post<DuplicateResponse>('/duplicate-check', { description, latitude, longitude, dataset }, signal)
+}
+
+export function relatedComplaints(
+  complaintId: string,
+  topK = 5,
+  dataset: Dataset = 'nyc',
+  signal?: AbortSignal,
+) {
+  return post<SearchResponse>('/related', { complaint_id: complaintId, top_k: topK, dataset }, signal)
 }

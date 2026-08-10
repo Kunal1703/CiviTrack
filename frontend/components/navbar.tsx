@@ -1,25 +1,43 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { useAuth } from '@/components/auth-provider'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MapPin, Plus, List, BarChart3, Menu, Shield, Home, Search } from 'lucide-react'
+import { roleHome } from '@/lib/auth-api'
+import {
+  MapPin, Plus, List, BarChart3, Menu, Shield, Home, Search, LogIn, LogOut, User,
+  ClipboardList,
+} from 'lucide-react'
 
-const navigation = [
-  { name: 'Home', href: '/', icon: Home },
-  { name: 'Report', href: '/report', icon: Plus },
-  { name: 'Issues', href: '/issues', icon: List },
-  { name: 'Analytics', href: '/dashboard', icon: BarChart3 },
-  { name: 'Admin', href: '/admin', icon: Shield },
+// Public (logged-out) nav.
+const publicNav = [{ name: 'Home', href: '/', icon: Home }]
+
+// Citizen product nav.
+const citizenNav = [
+  { name: 'Home', href: '/citizen', icon: Home },
+  { name: 'Report', href: '/citizen/report', icon: Plus },
+  { name: 'My Reports', href: '/citizen/reports', icon: ClipboardList },
+  { name: 'Nearby', href: '/citizen/nearby', icon: MapPin },
+]
+
+// Admin operational workspace nav.
+const adminNav = [
+  { name: 'Overview', href: '/admin', icon: Shield },
+  { name: 'Issues', href: '/admin/issues', icon: List },
+  { name: 'Map', href: '/admin/map', icon: MapPin },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 
 function openPalette() {
@@ -28,12 +46,26 @@ function openPalette() {
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, logout } = useAuth()
+
+  // Auth screens are full-bleed — no app chrome.
+  if (pathname === '/login' || pathname === '/register') return null
+
+  // Role-specific navigation (the server enforces access regardless of what's shown).
+  const navigation = user?.role === 'admin' ? adminNav : user?.role === 'citizen' ? citizenNav : publicNav
+  const homeHref = user ? roleHome(user.role) : '/'
+
+  async function onLogout() {
+    await logout()
+    router.replace('/')
+  }
 
   return (
     <header className="glass sticky top-0 z-50 w-full border-b border-border/60">
       <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={homeHref} className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-sm">
             <MapPin className="h-5 w-5 text-primary-foreground" />
           </div>
@@ -45,7 +77,10 @@ export function Navbar() {
         {/* Desktop nav */}
         <div className="hidden md:flex md:items-center md:gap-1">
           {navigation.map((item) => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
+            // Role roots ('/', '/admin', '/citizen') match exactly so they don't
+            // stay highlighted on their subpages.
+            const exact = item.href === '/' || item.href === '/admin' || item.href === '/citizen'
+            const isActive = exact ? pathname === item.href : pathname.startsWith(item.href)
             return (
               <Link
                 key={item.name}
@@ -83,12 +118,36 @@ export function Navbar() {
             <kbd className="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
           </button>
           <ThemeToggle />
-          <Button asChild size="sm" className="gap-2">
-            <Link href="/report">
-              <Plus className="h-4 w-4" />
-              Report
-            </Link>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  <span className="max-w-[10rem] truncate">{user.full_name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex flex-col">
+                  <span className="truncate">{user.email}</span>
+                  <span className="text-xs font-normal capitalize text-muted-foreground">
+                    {user.role}
+                  </span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onLogout} className="gap-2 text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild size="sm" className="gap-2">
+              <Link href="/login">
+                <LogIn className="h-4 w-4" />
+                Sign in
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* Mobile */}
@@ -112,6 +171,20 @@ export function Navbar() {
                   </Link>
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              {user ? (
+                <DropdownMenuItem onClick={onLogout} className="gap-2 text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign in
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
