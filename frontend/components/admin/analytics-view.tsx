@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getCategory } from '@/lib/categories'
 import { statusMeta, ADMIN_STATUS_LABEL, type ComplaintStatus } from '@/lib/status'
 import { getAdminStats, type AdminStats } from '@/lib/admin-api'
+import { ResolutionInsights } from '@/components/admin/resolution-insights'
 
 const TOOLTIP = {
   background: 'rgba(15,23,42,0.96)',
@@ -159,6 +160,9 @@ export function AnalyticsView() {
           </ResponsiveContainer>
         </Card>
       </div>
+
+      {/* M4 — resolution-time insights (NYC-trained) */}
+      <ResolutionInsights />
     </div>
   )
 }
