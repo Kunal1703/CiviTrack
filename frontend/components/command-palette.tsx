@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/components/auth-provider'
 import {
   Home, Plus, List, BarChart3, Shield, Sun, Moon, MapPin, ClipboardList, LogIn,
-  UserPlus, Cpu, LogOut,
+  UserPlus, Cpu, LogOut, Flame,
 } from 'lucide-react'
 
 type Item = { label: string; href?: string; icon: React.ComponentType<{ className?: string }>; action?: () => void }
@@ -54,6 +54,7 @@ export function CommandPalette() {
           { label: 'Overview', href: '/admin', icon: Shield },
           { label: 'Issue queue', href: '/admin/issues', icon: List },
           { label: 'Issue map', href: '/admin/map', icon: MapPin },
+          { label: 'Hotspot intelligence', href: '/admin/hotspots', icon: Flame },
           { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
         ]
       : user?.role === 'citizen'

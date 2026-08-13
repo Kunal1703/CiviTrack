@@ -18,7 +18,7 @@ import {
 import { roleHome } from '@/lib/auth-api'
 import {
   MapPin, Plus, List, BarChart3, Menu, Shield, Home, Search, LogIn, LogOut, User,
-  ClipboardList,
+  ClipboardList, Flame,
 } from 'lucide-react'
 
 // Public (logged-out) nav.
@@ -37,6 +37,7 @@ const adminNav = [
   { name: 'Overview', href: '/admin', icon: Shield },
   { name: 'Issues', href: '/admin/issues', icon: List },
   { name: 'Map', href: '/admin/map', icon: MapPin },
+  { name: 'Hotspots', href: '/admin/hotspots', icon: Flame },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 
