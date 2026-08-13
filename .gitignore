@@ -70,6 +70,8 @@ Thumbs.db
 
 # ML model artifacts
 ml/models/**/artifacts/
+# M5 geospatial batch-run reports (generated; measured numbers live in docs/M5_REPORT.md)
+ml/geo/reports/
 *.safetensors
 *.bin
 *.pt
