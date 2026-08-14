@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from app.core.config import get_settings
 from app.core.db import close_pool, get_pool
 from app.core.logging import configure_logging, get_logger
-from app.routers import admin, auth, classify, complaints, resolution, semantic, system
+from app.routers import admin, auth, classify, complaints, semantic, system
 
 
 @asynccontextmanager
@@ -37,7 +37,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
-        description="CiviTrack AI — API Gateway (system, classify, semantic, auth, complaints).",
+        description="CiviTrack AI — API Gateway (system, classify, semantic, auth, complaints, hotspots).",
         lifespan=lifespan,
     )
 
@@ -47,7 +47,6 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(complaints.router)
     app.include_router(admin.router)
-    app.include_router(resolution.router)
 
     @app.get("/", tags=["system"])
     def root() -> dict[str, str]:

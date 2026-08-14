@@ -1,322 +1,444 @@
 # CiviTrack AI — Project Continuity & Handoff (PROJECT_CONTEXT.md)
 
-> **This document is the continuity reference for future Claude Code sessions.**
-> It records the **actual, verified state** of the repository through **M3 (complete)**.
-> Verified against the real repo/docs/DB on **2026-08-08**. Where something is not
-> implemented, it is marked **NOT IMPLEMENTED / PLANNED / DEFERRED / NEEDS VERIFICATION**.
-> **Do not assume this document is more authoritative than the code.** On any
-> contradiction, investigate the code/data and update this file.
+> **This is the continuity reference for the next Claude Code session.** It records
+> the **actual, verified repository/branch/Docker/DB state**; the M5 execution and
+> verification pass was completed and committed on **2026-08-14**.
+> **Do not assume this doc is more authoritative than the code.** On any
+> contradiction, inspect the code/data and update this file.
+>
+> **M5 (geospatial hotspots) is now ✅ DONE, verified and committed** on branch
+> `feat/m5-geospatial-hotspots` (not merged, not pushed). **The next milestone is
+> M6 (time-series forecasting), which is design-first and NOT started.** Jump to
+> `## Next Claude Session — Start Here` at the very bottom.
 
 ---
 
-> **Product/UX upgrade (application layer, post-M3 — NOT M4).** On top of the
-> completed ML milestones, CiviTrack AI was evolved into a **role-based two-sided
-> platform**: real auth (argon2 + JWT httpOnly cookies, citizen/admin roles in a new
-> `app` schema), a citizen experience (`/citizen/*`), an admin operations workspace
-> (`/admin/*`), a scrollytelling public landing (`/`), a developer showcase
-> (`/architecture`), and a **Delhi-based product experience** using clearly-labeled
-> **seeded demo data** (never NYC relabeled as Delhi). This added no new ML — M1/M3
-> are reused unchanged; M4 remains unstarted. **See [`PRODUCT_UX.md`](PRODUCT_UX.md)
-> for the full role model, auth architecture, information architecture, `app`-schema
-> DB changes, the NYC-vs-Delhi dataset boundary, map/hotspot logic, and the UI/UX +
-> animation strategy.**
+## 0. Right now (session starting point)
+
+- **Current git branch:** `feat/m5-geospatial-hotspots`. **M5 is complete** — migration
+  `0008` applied, Gi\* batch run against real Postgres, gateway API + admin map built,
+  verified end-to-end, and committed (per-step). **Not merged, not pushed.**
+- **Docker:** gateway image was **rebuilt from the M5 branch** (so the running gateway
+  now serves `/api/v1/hotspots` and **no longer serves M4's `/resolution-time`** — M4 is
+  unmerged; expected). All 3 containers healthy; ports 5433/8000/8001 open.
+- **Measured M5 result (2026-08-14):** overall Gi\* on 200,782 geocoded NYC 311 points →
+  1,086 cells, **272 hot / 273 cold** significant (BH-FDR α=0.05); monthly hot-cell
+  Jaccard stability **mean 0.68**; runtime 183 s. See `docs/M5_REPORT.md`.
+- **Immediate next action:** **M6 (time-series forecasting) — design-first, NOT started.**
+  Do not begin implementation before a committed M6 design.
+
+---
 
 ## 1. Project overview
-**CiviTrack AI** is an end-to-end AI/ML-powered civic-complaint intelligence platform built on **real NYC 311 open data**. It turns raw complaints into: automatic **classification**, **semantic search**, **related-complaint discovery**, and **duplicate detection** (with more milestones planned: resolution-time regression, geospatial intelligence, forecasting, LLM/RAG).
 
-- **Problem:** municipal complaint operations are reactive and manual; there is no system that turns the raw complaint stream into classified, related, deduplicated, explainable intelligence.
-- **Why NYC 311:** a real, large, public dataset with categories, timestamps, geolocation, agency, and resolution timestamps — credible scale and labels (not synthetic).
-- **Three simultaneous purposes:** (1) a genuine ML/Data-Science college project, (2) a strong GitHub portfolio piece, (3) something demonstrable in hackathons/internships/interviews.
-- **Guiding principle:** real data → proper ML methodology → measurable evaluation → explainability → production integration → polished UI. Baselines before deep models; document limitations; never call a rule "AI".
-
-**One-paragraph description:** *CiviTrack AI is an end-to-end ML-powered civic intelligence platform that uses real NYC 311 data to classify complaints (DistilBERT), discover semantically related incidents and detect potential duplicates via transformer embeddings + spatial-temporal reasoning (pgvector + PostGIS), and cluster complaint patterns — served through a Dockerized FastAPI gateway / ml_service / PostgreSQL stack and a premium Next.js frontend.*
-
----
-
-## 2. Current architecture (actual)
-```
-Frontend (Next.js dev server, NOT containerized)
-   │  /api/* proxied via next.config.mjs rewrite → GATEWAY_URL
-   ▼
-FastAPI Gateway  (Docker · container civitrack-gateway · host :8000)
-   │  validation, routing, public API contracts, 503-degrade
-   ▼  httpx
-ML Service  (Docker · container civitrack-ml-service · host :8001 · image 0.2.0)
-   │  DistilBERT classifier + MiniLM embedder + read DB pool
-   ▼  psycopg
-PostgreSQL 16  (Docker · container civitrack-postgres · host :5433 → internal 5432)
-   ├── PostGIS 3.4.3   (geospatial: geom column, ST_DWithin)
-   └── pgvector 0.8.5  (semantic.complaint_embeddings, HNSW cosine)
-```
-- **Frontend:** Next.js 16 (App Router), React 19, Tailwind 4, shadcn/ui, Framer Motion 13, next-themes. **Runs as a dev server / would deploy Vercel-style — it is NOT a Docker Compose service.**
-- **Gateway (`services/gateway`):** FastAPI; owns **no** model code; endpoints: `/health`, `/health/db`, `/config`, `/api/v1/classify`, `/api/v1/semantic/{search,related,duplicate-check}`. Talks to ml_service via `ML_SERVICE_URL` (compose: `http://ml_service:8001`).
-- **ML Service (`services/ml_service`):** FastAPI; loads the **DistilBERT classifier** (mounted artifact) + **all-MiniLM-L6-v2 embedder** (loaded offline from a mounted HuggingFace cache) + a **psycopg connection pool** for pgvector queries. Endpoints: `/classify`, `/semantic/{search,related,duplicate-check}`, `/health`.
-- **Database:** one Postgres image bundling **PostGIS + pgvector** (`infra/docker/postgres/Dockerfile`).
-- **Orchestration:** Docker Compose (`infra/docker-compose.yml`) — services: `postgres`, `gateway`, `ml_service` (+ `pgdata` volume). **No Kubernetes/Kafka/Redis/MinIO/extra vector DB.**
-- **Key env/config:** `POSTGRES_HOST_PORT` (host 5433), `GATEWAY_PORT` (8000), `ML_SERVICE_PORT` (8001), `HF_CACHE` (host HF cache mounted read-only into ml_service for the offline embedding model), `GATEWAY_URL` (frontend → gateway). Secrets in `infra/.env` (git-ignored); `.env.example` committed.
+**CiviTrack AI** — an end-to-end AI/ML civic-complaint intelligence platform on **real
+NYC 311 open data**. It classifies complaints (DistilBERT), finds semantically related
+incidents + detects duplicates (MiniLM embeddings + pgvector + PostGIS spatial-temporal
+gate), clusters patterns, predicts resolution time (LightGBM), and (in progress) detects
+statistically-significant geospatial hotspots (Getis-Ord Gi\*). Served through a
+Dockerized FastAPI gateway / ml_service / PostgreSQL(PostGIS+pgvector) stack and a
+premium Next.js frontend. Purposes: (1) genuine ML/DS project, (2) portfolio piece,
+(3) demoable in hackathons/interviews. Principle: real data → baselines before deep
+models → measured evaluation → explainability → honest limitations.
 
 ---
 
-## 3. Repository structure (actual, important paths)
-```
-civitrack-ai/
-├── frontend/               # Next.js app (UI). NOT containerized.
-│   ├── app/                # pages: /, /report, /issues, /issues/[id], /dashboard, /admin
-│   ├── components/         # ui-kit.tsx (design system), ai-analysis, semantic-*, similarity, etc.
-│   ├── components/ui/      # shadcn primitives
-│   ├── lib/                # api-client.ts, semantic-api.ts, categories.ts, motion.ts
-│   └── hooks/              # use-classify.ts, use-duplicate-check.ts
-├── services/
-│   ├── gateway/app/        # FastAPI: core/, routers/{system,classify,semantic}, schemas/
-│   └── ml_service/app/     # FastAPI: predictor.py, embedder.py, semantic_store.py,
-│                           #          embed_normalize.py (vendored), routers/, schemas/
-├── ml/
-│   ├── data/               # M0 pipeline: ingest, clean, validate, load, ingest_stratified
-│   ├── models/classification/  # M1: taxonomy, train_baseline, train_transformer, evaluate,
-│   │                       #     compare_models, package_model, config, text.py; artifacts/ (git-ignored)
-│   ├── semantic/           # M3: config, normalize, embedder, generate, vector_store,
-│   │                       #     benchmark, cluster, evaluation/, reports/, tests/
-│   ├── notebooks/          # M0 EDA
-│   └── reports/            # M0 data-quality report
-├── db/
-│   ├── init/01-extensions.sql        # first-boot: CREATE EXTENSION postgis, vector
-│   ├── migrations/                    # 0001–0003 numbered reversible SQL (up/down)
-│   └── migrate.py                     # tiny psycopg migration runner (up/down/status)
-├── infra/                  # docker-compose.yml, docker/postgres/Dockerfile, .env(.example)
-├── docs/                   # BLUEPRINT, M1_DESIGN, M3_DESIGN, M3_REPORT, model-cards/, THIS FILE
-├── archive/backend-flask-v1/          # preserved legacy Flask/MySQL prototype (inactive)
-└── README.md
-```
-**Note:** there is **no M0_DESIGN.md and no M2_DESIGN.md** (those milestones were executed without standalone design docs; only **M1** and **M3** have design docs). No `M4_DESIGN.md` yet (correct — M4 not started).
+## 2. Milestone status (VERIFIED against the repo, not the blueprint)
 
----
-
-## 4. M0 — Foundation / Data / Infrastructure ✅
-- **Monorepo restructure:** original Next.js frontend + disconnected Flask/MySQL backend → moved frontend into `frontend/` via `git mv` (history preserved); legacy Flask/MySQL **archived** to `archive/backend-flask-v1/` (not deleted).
-- **Infra pivot:** Flask/MySQL → **FastAPI + PostgreSQL 16 + PostGIS 3.4.3 + pgvector 0.8.5 + Docker Compose** (extensions verified; container healthy).
-- **Data pipeline:** NYC 311 ingestion (Socrata API) → **Bronze → Silver** cleaning (`ml/data/`); EDA notebook + data-quality report (`ml/reports/`).
-- **Gateway foundation:** FastAPI `/health`, `/health/db`, `/config`; env-driven config; structured logging.
-- **Known correction (fixed in M3):** the original M0 Postgres load was ~**50k** rows; M1 produced the canonical ~**204k** parquet; Postgres was reconciled to 204k in M3.
-
----
-
-## 5. M1 — Classification ✅
-- **Dataset:** NYC 311 re-ingested **stratified across all 12 months of 2024** (~204k) → canonical labeled dataset **201,537 rows**; split ≈ **train 141,075 / val 30,231 / test 30,231** (`data/gold/`). Fixed the seasonal bias of the winter-heavy 50k slice.
-- **Taxonomy:** ~150 raw complaint types (heavy imbalance; 75 types < 50 rows) → curated **19 categories (18 + Other)**, version-controlled (`ml/data/category_taxonomy.yaml`).
-- **Data reality:** NYC 311 has **no free-text complaint body**; `complaint_type` is the **label** (can't be input — leakage); the text field used is **`descriptor`** (short/formulaic). Preprocessing is a **single source-agnostic function**; the dataset loader is **swappable** so a richer free-text source can replace `descriptor` later.
-- **Models & measured results** (from `docs/model-cards/complaint-classifier.md`):
-
-  | Metric | DistilBERT | TF-IDF + LogReg (baseline) |
-  |---|---|---|
-  | Test macro-F1 (in-distribution) | 0.9626 | **0.9756** |
-  | Test accuracy | 0.9792 | 0.9904 |
-  | **Probe accuracy** (citizen phrasing) | **0.5556** | 0.3889 |
-  | **Probe macro-F1** | **0.4497** | 0.3525 |
-
-  **Honest nuance:** DistilBERT scores *slightly below* the TF-IDF baseline **in-distribution** because it was trained on a **CPU-constrained ~6k-sample subset**; it wins **decisively on the citizen-phrasing probe** (generalization). The served model is proof-quality; scaling up (more data/epochs/GPU) is a config change, not an architecture change.
-- **Serving:** separate **`ml_service`** holds the model (gateway owns no model code) → `POST /api/v1/classify`. **MLflow** tracks runs; **model card** written. Docker path verified end-to-end. **Local model, no paid API.**
-
----
-
-## 6. M2 — Product Integration + Premium UI/UX ✅
-- **Real AI integration:** removed the mock classification flow; `frontend/lib/api-client.ts` + `useClassify` hook → `/api/v1/classify` (Next.js `/api` **proxy** rewrite → gateway) → ml_service → DistilBERT. Debounced, **abortable**, non-blocking, error-handled, with confidence display + **AI suggestion / manual override**. The Report page performs **real ML inference**.
-- **Design system (reusable asset — future milestones MUST extend, not replace):** `frontend/components/ui-kit.tsx` (`PageContainer`, `Reveal`, `Eyebrow`, `SectionHeader`, `PageHeader`, `StatCard`, `StatGrid`) + `lib/motion.ts` shared variants. Glassmorphism (`.glass`), gradients (`.text-gradient`), premium shadows, ambient aurora background, **Framer Motion**, **command palette (⌘K)**, page transitions, dark/light themes (next-themes), responsive layouts, **accessibility + reduced-motion** (`MotionConfig reducedMotion="user"`).
-- **Screens redesigned:** Home, Report (flagship live AI), Issues, Dashboard, Admin — all composed from the shared kit for one coherent look.
-- **Tooling available:** shadcn/ui, Framer Motion, the **21st.dev MCP server**, and the **UI/UX Pro** package (use for premium patterns; adapt, do not copy verbatim; keep one design system).
-- **Caveat:** issue persistence has no backend endpoint yet — the Report form submit is simulated + toast (classification is the real part). Dashboard/Admin analytics use mock data for display.
-
----
-
-## 7. M3 — Semantic Intelligence ✅ (detailed)
-### Data reconciliation
-Postgres `silver.complaints_311` was reloaded from the canonical M1 parquet → **204,000 rows in Postgres (200,782 geocoded)**; the labeled subset is **201,537**. Embeddings now correspond to the same dataset as the M1 classifier.
-
-### Embedding benchmark (measured, `docs/M3_REPORT.md`)
-| Model | dim | curated AUC | dup mean-sim |
-|---|---:|---:|---|
-| TF-IDF (baseline) | — | 0.951 | 0.21 |
-| **all-MiniLM-L6-v2** ✅ | 384 | 0.986 | 0.76 |
-| BGE-small-en-v1.5 | 384 | 1.000 | 0.85 |
-
-**Selected all-MiniLM-L6-v2** — BGE-small's AUC edge is one pair on a 24-pair set; MiniLM is lighter/faster on CPU with **wider similarity spread** (cleaner thresholds). Both are 384-d → BGE-small is a drop-in future swap.
-
-### Embeddings & vector store
-- **201,537 vectors** (384-d) in `semantic.complaint_embeddings`; but only **~776 unique descriptors** (categorical data) → embed each unique text once and fan out per complaint (**encode 3.7 s**, insert 38.8 s).
-- **~605 MB** storage (vectors + **HNSW cosine** index + btree). Provenance columns: `embedding_model`, `embedding_version`, `data_version` (models/versions coexist; a different-dim model gets a new table → old vectors never corrupt).
-
-### Semantic retrieval
-Cosine similarity (unit-normalized embeddings), HNSW ANN. **Precision@5 = 0.76, MRR = 0.80** (same-category relevance, 200-query sample).
-
-### Duplicate detection (the headline)
-A duplicate = **high semantic similarity AND nearby location (PostGIS `ST_DWithin`) AND nearby time** — threshold **data-derived (0.59, precision-favoring)**.
-- **Natural language (curated):** TF-IDF F1 **0.17** vs MiniLM F1 **0.95** → embeddings crush classical NLP on reworded complaints.
-- **Derived-real (categorical):** similarity-only precision **0.56** → **+ spatial gate → precision 1.00 (F1 1.00)**. Proves the gate is essential (two different potholes are *related*, not duplicates).
-
-### Clustering (offline, analytical)
-**HDBSCAN** (14 clusters, silhouette **0.20**, noise 82%) vs **K-Means** baseline (silhouette **0.04**). **PCA/UMAP for visualization only** (never as the clusterer). Honest: clusters largely track categories; interpretability limited.
-
-### Production integration
-- `ml_service`: `/semantic/{search,related,duplicate-check}` (embedder + `semantic_store` pgvector queries + PostGIS gate).
-- `gateway`: `POST /api/v1/semantic/{search,related,duplicate-check}` (validated, proxied).
-- **Frontend:** duplicate warning in the Report flow, related complaints on the issue detail page, semantic search on Issues, an **admin semantic explorer**, animated similarity bars, reveals, reduced-motion.
-
-### Verification
-Full **Docker** path verified: frontend → gateway (8000) → ml_service (8001) → pgvector/PostGIS; semantic search + duplicate-check work; validation returns 422; **tests pass** (embed_normalize parity + API validation). Migrations `0001–0003` applied.
-
-### Query latency (measured)
-**p50 ≈ 820 ms** per query — dominated by single-query **CPU** embedding; HNSW retrieval itself < 10 ms. Faster on GPU/batched (documented, not built).
-
----
-
-## 8. M3 important data limitations (academic honesty — do not hide)
-- **NYC 311 has no rich citizen free-text.** We embed **`descriptor`**, which is **short and formulaic**.
-- **~201,537 complaints ↔ only ~776 unique descriptors** (verified) → many complaints share identical text → **all same-descriptor complaints get the same vector**. Descriptor-based semantic similarity can be **degenerate**.
-- **Why spatial-temporal gating was necessary:** because identical-vector complaints can't be told apart by text, semantic similarity **alone** cannot distinguish a true duplicate incident from a same-descriptor complaint elsewhere (precision 0.56). Adding the **spatial + temporal gate** fixed precision to 1.0. This is a strong story: *data analysis → discovered model limitation → added spatial/temporal reasoning → better precision.*
-- **Evaluation tracks are separated:** a **descriptor track** (can be artificially easy) and a **citizen-phrasing track** (curated). **Synthetic pairs are clearly labeled and never presented as real ground truth.**
-
----
-
-## 9. Current ML capabilities
-| Capability | Algorithm | Status | Milestone | Evaluation |
-|---|---|---|---|---|
-| Complaint classification | TF-IDF+LogReg baseline; DistilBERT | ✅ implemented | M1 | macro-F1 (test 0.96), probe (0.56/0.45) |
-| Semantic embeddings | all-MiniLM-L6-v2 (384-d) | ✅ implemented | M3 | benchmark AUC 0.986 vs TF-IDF 0.951 |
-| Similarity search | pgvector cosine + HNSW ANN | ✅ implemented | M3 | Precision@5 0.76, MRR 0.80 |
-| Duplicate detection | embeddings + PostGIS spatial + temporal gate | ✅ implemented | M3 | F1 0.95 (natural); gate precision 0.56→1.0 |
-| Clustering | HDBSCAN (+ K-Means baseline, PCA/UMAP viz) | ✅ implemented | M3 | silhouette 0.20 vs 0.04 |
-
-**Future (NOT implemented):** resolution-time **regression** (M4), **geospatial** intelligence/hotspots (M5), **time-series forecasting** (M6), **LLM/RAG** (M7).
-
----
-
-## 10. Current database state (actual)
-- **PostgreSQL 16 + PostGIS 3.4.3 + pgvector 0.8.5** (one bundled image).
-- **`silver.complaints_311`** — 204,000 rows. Columns incl. `unique_key` (311 id, text), `created_date`, `closed_date`, `resolution_hours`, `agency`, `complaint_type`, `descriptor`, `status`, `borough`, `incident_zip`, `latitude`, `longitude`, `geo_valid`, **`geom` (PostGIS Point)**. Created by the pandas pipeline (`to_sql` replace) — **no PK/FK constraints on it**. Indexes: GiST on `geom`, btree on `created_date`.
-- **`semantic.complaint_embeddings`** — 201,537 rows; `embedding vector(384)`, `complaint_id`, `source_column`, `text_snippet`, `embedding_model`, `embedding_version`, `data_version`; unique `(complaint_id, embedding_model, embedding_version)`; indexes: **HNSW `vector_cosine_ops`**, btree on `complaint_id` and `(model,version)`. **No FK to silver** (silver is rebuilt by the pipeline; a FK would block reloads).
-- **`semantic.descriptor_clusters`** — offline cluster assignments (HDBSCAN) + PCA `x,y` for viz.
-- **Migrations:** **numbered reversible SQL** in `db/migrations/` (`0001_semantic_embeddings`, `0002_embeddings_hnsw_index`, `0003_descriptor_clusters`), applied by `db/migrate.py` (tracks `public.schema_migrations`). **Alembic is NOT used** (only a transitive MLflow dependency). First-boot extensions via `db/init/01-extensions.sql`.
-
----
-
-## 11. ML / experiment infrastructure (actual)
-- **MLflow:** local **SQLite** backend (`mlruns/mlflow.db`; git-ignored). Experiments: `complaint-classification` (M1), `semantic-embeddings` (M3: benchmark, generate, evaluation, clustering).
-- **Preprocessing:** classifier uses `ml/models/classification/text.py::clean_text` (strips punctuation); embeddings use `ml/semantic/normalize.py::embed_normalize` (**lighter** — keeps punctuation/case) **vendored** into `services/ml_service/app/embed_normalize.py` (parity test enforces they match).
-- **Model artifacts:** DistilBERT saved under `ml/models/classification/artifacts/transformer/` (**git-ignored**, ~268 MB `model.safetensors`); mounted read-only into ml_service. Embedding model (**MiniLM**) lives in the **HuggingFace cache** (git-ignored), mounted into ml_service (offline).
-- **Vectors:** stored in Postgres (a Docker volume), not in git.
-- **Reports:** `ml/semantic/reports/{benchmark,evaluation,clustering}.json`; `ml/models/classification/reports/` (M1 comparison/confusion).
-- **DVC:** **PLANNED / NOT INITIALIZED.** Reproducibility currently relies on deterministic generation, content hashes, and MLflow. Do **not** claim DVC is active.
-
----
-
-## 12. Large-file / Git rules
-- **Known issue:** the DistilBERT `model.safetensors` (~**268 MB**) exceeds **GitHub's 100 MB** file limit and previously caused a push failure. **Do NOT commit large model binaries.**
-- **Never commit:** `.env` / secrets / API keys, large datasets, model binaries (`*.safetensors`, `*.pkl`, `*.pt`), `*.parquet`, generated vector DBs, `mlruns/`, `node_modules/`, virtualenvs, `.next/`. (All covered in `.gitignore`.)
-- **Artifact strategy (actual):** code/config/schemas/migrations/docs/**evaluation definitions**/small metadata live in git; large artifacts stay **local/cached** and are **reproducible** (trained/downloaded on demand; models mounted into containers). `.env.example` is committed; real `.env` is ignored.
-
----
-
-## 13. UI/UX rules for future frontend milestones
-Future frontend work **must reuse and extend the M2 design system** (`frontend/components/ui-kit.tsx` + `lib/motion.ts`), never redesign from scratch. Use: glassmorphism, gradients, Framer Motion, smooth reveals/transitions, responsive layouts, meaningful micro-interactions, dark/light themes, **accessibility + reduced-motion**, professional typography, polished loading/empty states, animated charts/counters. Leverage **21st.dev MCP**, **UI/UX Pro**, **shadcn/ui** for premium patterns (adapt, don't copy verbatim). **Rule:** professional visual design **>** excessive effects; animations must communicate state/hierarchy/interaction; keep one coherent system.
-
----
-
-## 14. Future roadmap
-| Milestone | Objective | ML concepts | Product capability | Dependencies | Key risks |
-|---|---|---|---|---|---|
-| **M4** (next) | Resolution-time prediction | supervised **regression**, feature engineering, baseline vs strong model, SHAP, prediction intervals | "expected resolution time" + explanation on complaints | silver timestamps; may reuse M3 embeddings as features | **target leakage** (must exclude closed_date/resolution/status); heavy-tailed target; right-censoring (open complaints) |
-| **M5** | Geospatial intelligence | spatial clustering, **hotspot stats (Getis-Ord Gi\*)**, HDBSCAN/spatial | hotspot maps, ward/zone intelligence | PostGIS (M0), M3 spatial gate | spatial-stat validity; map perf |
-| **M6** | Time-series forecasting | seasonality/trend, backtesting, forecast metrics | complaint-volume forecasts | historical aggregates | data window; backtest rigor |
-| **M7** | LLM / RAG | grounded generation, retrieval, tool use | summaries, recommendations, NL query | M1/M3 (+M4/M5/M6) outputs | cost, hallucination, secrets mgmt; use LLM only where reasoning adds value |
-
----
-
-## 15. M4 starting context (most important for the next session)
-**M4 = Resolution-Time Prediction / Regression + Explainability. M4 HAS NOT STARTED.**
-
-Expected ML concepts: target engineering, regression, feature engineering, **baseline → stronger model comparison**, regression metrics, error analysis, **SHAP explainability**, **uncertainty/prediction intervals** (if justified), model serving, frontend integration, Docker verification.
-
-**Preliminary data facts already observed (verify again before use):**
-- `silver.complaints_311` has `resolution_hours` for **200,180 / 204,000 (98.1%)** rows (`created→closed`); ~2,235 still open (**right-censored**); **3,753 zero-duration** closures.
-- Target is **extremely heavy-tailed**: p25 0.9h, **p50 7.2h**, p90 555h, p99 7,319h, max ~22,560h → **log transform likely justified**.
-- **Agency dominates** resolution time (NYPD median ~1h vs HPD ~95h vs DPR ~677h) → an **agency/category-median baseline will be strong** (LightGBM must beat it).
-- Feature availability is high (agency 100%, geo ~98%); **199,417 closed complaints already have M3 embeddings** (reusable text features).
-
-**The next Claude Code session MUST, in order:**
-1. Inspect actual NYC 311 **timestamp fields** and derive the target carefully.
-2. Inspect the **resolution-time distribution** (confirm the numbers above).
-3. Identify **leakage risks** (exclude `closed_date`, `resolution_hours`, `status`, `updated_at` from features — explicit allow-list).
-4. Determine a **defensible target** (train on closed; document censoring).
-5. Inspect available **features** (temporal, categorical, geo, optional M3 embeddings).
-6. Read `docs/BLUEPRINT.md` (M4 = §763–771: LightGBM + engineered features + quantile/conformal intervals + SHAP + leakage tests + slice error analysis; metrics MAE/RMSE + interval coverage).
-7. Create **`docs/M4_DESIGN.md`** (problem, target, leakage analysis, features, baseline, candidate models, metrics, split strategy, error analysis, SHAP, intervals, API, frontend, Docker, testing, phases, commit plan).
-8. **Wait for approval.**
-9. Only then implement.
-
-**Do NOT pre-decide the final regression model without examining the actual data.** (LightGBM is the blueprint's leaning, but confirm on the data and always ship a baseline first.)
-
----
-
-## 16. Future milestone dependencies
-- **M3 → M4:** M3 MiniLM embeddings are reusable as **text features** for the resolution regressor.
-- **M0 PostGIS → M5:** the geospatial column/index and the M3 spatial gate are the foundation for hotspot analysis.
-- **M1 classification →** downstream analytics (category is a feature/dimension everywhere).
-- **M4 resolution prediction →** future prioritization/SLA views.
-- **M6 forecasting** consumes historical complaint aggregates (temporal data already present).
-- **M7 LLM/RAG** consumes outputs of M1/M3/M4/M5/M6 (grounded reasoning over the platform's own data).
-
----
-
-## 17. Important architectural decisions (log)
-| Decision | Rationale |
-|---|---|
-| **FastAPI** (not Flask) | async, Pydantic validation, native ML-serving ecosystem |
-| **PostgreSQL** (not MySQL) | one engine for relational + geospatial + vector |
-| **PostGIS** | real spatial queries (radius, distance) — duplicate gate, future hotspots |
-| **pgvector** | vector search in the same DB (no separate vector store) |
-| **Separate `ml_service`** | keep heavy model deps out of the gateway; clean seam; independent scaling |
-| **Docker Compose** | reproducible local/prod-ish stack without k8s overhead |
-| **MiniLM production embeddings** | best CPU/size/quality trade-off; 384-d (BGE-small drop-in) |
-| **TF-IDF baselines everywhere** | prove ML value over classical NLP; honest comparison |
-| **Spatial-temporal duplicate gate** | semantic similarity alone can't identify incidents (categorical data) |
-| **HDBSCAN + K-Means comparison** | density/noise handling vs a baseline; measured, not asserted |
-| **Numbered reversible SQL migrations** | project uses raw SQL/pandas (no ORM) → Alembic unnecessary |
-| **No k8s/Kafka/extra vector DB** | avoid infrastructure for buzzwords; keep it simple/reproducible |
-| **Monorepo (frontend/services/ml/db/infra)** | one repo, clear boundaries, shared docs |
-| **M2 design system (ui-kit)** | one coherent premium UI; future milestones extend it |
-
----
-
-## 18. Things we must NOT do
-- Do **not** rebuild completed milestones (M0–M3) without evidence of a real problem.
-- Do **not** start M5 before M4 is complete; do **not** silently jump milestones.
-- Do **not** replace the working architecture unnecessarily; do **not** re-embed 201k or replace MiniLM without evidence.
-- Do **not** add random AI features; do **not** use an LLM for deterministic ML without justification.
-- Do **not** commit secrets or large model binaries; do **not** commit `.env`.
-- Do **not** present synthetic evaluation as real-world ground truth; do **not** hide dataset limitations.
-- Do **not** introduce infrastructure for buzzwords; do **not** sacrifice ML correctness for UI.
-
----
-
-## 19. Verification status
-| Milestone | Status | Verification |
+| Milestone | Status | Where it lives |
 |---|---|---|
-| **M0** | ✅ COMPLETE | Docker/Postgres/PostGIS/pgvector up; ingestion + Bronze→Silver + EDA |
-| **M1** | ✅ COMPLETE | classifier trained/evaluated; ml_service + gateway; Docker e2e; model card; MLflow |
-| **M2** | ✅ COMPLETE | real `/api/v1/classify` from frontend; premium design system; builds clean |
-| **M3** | ✅ COMPLETE | embeddings + pgvector + retrieval/duplicate/clustering evaluated; semantic APIs; frontend; **Docker e2e verified**; tests pass; docs |
-| **M4** | ✅ COMPLETE | LightGBM resolution-time regressor (beats agency×category-median baseline on MAE; MedAE ~8h), CQR quantile intervals, SHAP; served via ml_service→gateway (admin-only); admin "resolution insights" UI; `docs/M4_DESIGN.md`, `M4_REPORT.md`, model card. Trained on NYC 311; not applied to Delhi. |
-| **M5** | 🔒 PLANNED | — |
-| **M6** | 🔒 PLANNED | — |
-| **M7** | 🔒 PLANNED | — |
+| **M0** Data & infrastructure | ✅ DONE | `main` |
+| **M1** Classification (DistilBERT) | ✅ DONE | `main` |
+| **M2** Product integration | ✅ DONE | `main` |
+| **M3** Semantic intelligence | ✅ DONE | `main` |
+| **Product/UX upgrade** (role-based platform, "Phases 1–5") | ✅ DONE | `main` (merged) |
+| **M4** Resolution-time regression | ✅ DONE (committed, **NOT merged, NOT pushed**) | branch `feat/m4-resolution-regression` only |
+| **M5** Geospatial hotspots (Gi\*) | ✅ DONE (executed, verified & committed, **NOT merged, NOT pushed**) | branch `feat/m5-geospatial-hotspots` (current) |
+| **M6** Time-series forecasting | 🔒 PLANNED (not started) | — |
+| **M7** LLM / RAG | 🔒 PLANNED (not started) | — |
 
-Git: working tree clean at handoff; history contains committed M0–M3 work. **Frontend is not containerized** (dev server). **DVC not initialized.**
+> **Important branch reality:** M4 and M5 are **independent feature branches off
+> `main`**; **neither is merged into `main`**. So the **M5 branch does NOT contain any
+> M4 code or M4 docs** (they exist only on the M4 branch). Nothing from this session
+> (product-UX, M4, M5) has been **pushed** to the remote.
 
 ---
 
-## 20. Handoff instructions (for the next Claude Code session)
-- **This document is the continuity reference for future Claude Code sessions.**
-- **Before implementing M4, read:** `docs/PROJECT_CONTEXT.md` (this file), `docs/BLUEPRINT.md`, `docs/M3_DESIGN.md`, `docs/M3_REPORT.md`, `docs/model-cards/`, and the current repository implementation.
-- **Then inspect the actual repository and data** (Postgres `silver.complaints_311` timestamps/resolution, features, leakage) — do not trust this document over the code.
-- **Do not assume this document is more authoritative than the actual code.** If a contradiction exists, investigate it and **update this document**.
-- **Do not begin M4 implementation until M4 has been designed (`docs/M4_DESIGN.md`) and approved.**
-- Preserve: the M2 design system (extend, don't replace), the git/large-file rules, honest limitations, and the "baseline before strong model / measure everything" methodology.
+## 3. Git state (VERIFIED via `git branch -a`, `git log`, `git status`)
+
+- **Branches:** `main`, `feat/role-based-civic-platform`, `feat/m4-resolution-regression`,
+  `feat/m5-geospatial-hotspots` (current), `remotes/origin/main`.
+- **`origin/main` (remote) = `8e2f8c3`** — the **pre-product-UX** state. **NOTHING new
+  has been pushed.** Local `main` is **5 commits ahead of `origin/main`, unpushed.**
+- **`main` (local) = `5f6bf92`** — M0–M3 **+** the full Product/UX upgrade. The 5
+  product-UX commits: `55e4bde` feat(platform) → `b233038` feat(citizen) → `47a0fc6`
+  feat(admin) → `1ee1fe7` feat(web) → `5f6bf92` feat(polish).
+- **`feat/role-based-civic-platform`** = `5f6bf92` (the product-UX branch, already
+  fast-forward-merged into `main`).
+- **`feat/m4-resolution-regression`** = `09d212d` — `main` + 5 M4 commits:
+  `a9d6f6f` docs(m4 design) → `d2897fc` feat(ml LightGBM) → `f9ab446` feat(ml serving)
+  → `cff948d` feat(admin resolution-insights UI + docs) → `09d212d` docs(m4 status).
+  **NOT merged, NOT pushed.**
+- **`feat/m5-geospatial-hotspots`** (current) = `7807ce0` — `main` + 1 commit
+  `7807ce0 docs(m5): geospatial hotspots design`. **NOT merged, NOT pushed.**
+- **Uncommitted on the M5 branch (`git status --short`):**
+  - ` M ml/requirements-ml.txt` (added `esda>=2.5`, `libpysal>=4.9`)
+  - `?? db/migrations/0008_geo_hotspots.up.sql`, `?? …0008_geo_hotspots.down.sql`
+  - `?? ml/geo/` (new package: `__init__.py`, `config.py`, `grid.py`, `gi_star.py`, `run.py`)
+  - These are the **M5 pipeline — written, unrun, uncommitted.**
+
+---
+
+## 4. Docker state (VERIFIED healthy 2026-08-08)
+
+Compose file `infra/docker-compose.yml`, project name `civitrack-ai`.
+
+| Container | Status | Host port → internal |
+|---|---|---|
+| `civitrack-postgres` | up, healthy | 5433 → 5432 |
+| `civitrack-gateway` | up, healthy | 8000 → 8000 |
+| `civitrack-ml-service` | up, healthy | 8001 → 8001 |
+
+- **Frontend is NOT containerized** (Next.js dev server; `/api/*` proxied to gateway).
+  Whether a dev server is currently running: **UNKNOWN — VERIFY** (start with
+  `cd frontend && npm run dev`; port 3000).
+- **⚠️ GOTCHA — running images vs checked-out branch:** the **gateway image was rebuilt
+  from the M5 branch** (2026-08-14), so the running gateway now serves M5 `/api/v1/hotspots`
+  and **no longer serves M4's `/resolution-time`** (404) — M4 is unmerged, on its own branch
+  only; this is **expected**. M1 `/classify` and M3 `/semantic/*` are unaffected (verified
+  200). The **ml_service image is still the M4-era 0.2.0 build** (serves classify/semantic;
+  its `/resolution-time` is unused now that the gateway no longer proxies to it). The **M5
+  Gi\* batch job runs on the HOST `.venv`** (reads Postgres directly) — no image rebuild.
+  To restore M4's endpoint, rebuild the gateway from the M4 branch. M4 remains safe on its
+  own branch.
+- **Recurring infra flake:** Docker Desktop tends to **stop during machine pauses**;
+  `restart: unless-stopped` does not always relaunch a cleanly-exited container. If the
+  dev-proxy returns 500 with `ECONNREFUSED ::1:8000 / 127.0.0.1:8000`, or the gateway
+  container is `Exited (0)`, run `docker compose up -d gateway` from `infra/`. Docker
+  Desktop exe: `C:\Users\kunal\AppData\Local\Programs\DockerDesktop\Docker Desktop.exe`.
+- **Env vars of note (compose):** `POSTGRES_HOST_PORT=5433`, `GATEWAY_PORT=8000`,
+  `ML_SERVICE_PORT=8001`, `JWT_SECRET`, `ADMIN_SIGNUP_CODE` (dev `civitrack-admin-2026`
+  in git-ignored `infra/.env`), `HF_CACHE`, `MODEL_DIR=/model`. **On the M4 branch only:**
+  ml_service also mounts `../ml/models/resolution/artifacts:/resolution_model:ro` and
+  sets `RESOLUTION_MODEL_DIR=/resolution_model` — **these are NOT in the M5 branch's
+  compose file.**
+
+---
+
+## 5. Database state (VERIFIED, read-only, 2026-08-08)
+
+- **PostgreSQL 16.14**, **PostGIS 3.4.3**, **pgvector 0.8.5** (one bundled image;
+  `db/init/01-extensions.sql` enables extensions first-boot). Data on named volume
+  `civitrack_pgdata` (survives restarts).
+- **Migrations** (numbered reversible SQL via `db/migrate.py`; **no Alembic**):
+  `0001–0008` **APPLIED** (`0008_geo_hotspots` applied 2026-08-14; `geo.hotspots` populated
+  with 16,990 rows). Check/apply: `POSTGRES_PORT=5433 .venv/Scripts/python.exe db/migrate.py status|up`.
+- **Schemas present:** `silver`, `semantic`, `app`, `public`, **`geo`** (created by 0008;
+  holds `geo.hotspots` + `geo.incident_clusters`).
+- **Tables + row counts (verified):**
+  - `silver.complaints_311` — **204,000** (NYC 311, 2024; ~200,782 geocoded / geo_valid;
+    ~200,180 closed with `resolution_hours`).
+  - `semantic.complaint_embeddings` — **201,585** = **201,537 NYC** (`embedding_version='v1'`,
+    `data_version='b6d58293cbe7ab14'`) + **48 Delhi** (`embedding_version='delhi-v1'`,
+    `data_version='delhi_demo'`). `semantic.descriptor_clusters` (M3).
+  - `app.users` — **4** (citizen/admin). `app.complaints` — **48** (**46**
+    `source='seed_delhi_demo'` + **2** `source='web'`). `app.complaint_updates`,
+    `app.departments` (7 seeded).
+- **Test accounts (in `app.users`):** citizen `aarav.citizen@example.com` / `citizenpass1`;
+  admin `ops.admin@example.com` / `adminpass1` (admin invite code `civitrack-admin-2026`).
+  Passwords argon2-hashed. **VERIFY still present before relying on them.**
+
+---
+
+## 6. Architecture (actual)
+
+```
+Citizen / Admin / Public browser
+        │  (Next.js dev server :3000, NOT containerized; /api/* proxied → gateway)
+        ▼
+FastAPI Gateway  (Docker civitrack-gateway :8000)
+   • auth (JWT httpOnly), server-side RBAC, complaints CRUD, admin analytics,
+     M1 classify proxy, M3 semantic proxy   [+ M4 /resolution-time on M4 branch]
+        │  httpx
+        ▼
+ml_service  (Docker civitrack-ml-service :8001)
+   • M1 DistilBERT classifier (mounted artifact)  • M3 all-MiniLM-L6-v2 embedder
+   • read DB pool for pgvector   [+ M4 resolution predictor on M4 branch]
+        │  psycopg
+        ▼
+PostgreSQL 16 + PostGIS 3.4.3 + pgvector 0.8.5  (Docker civitrack-postgres :5433)
+   • silver.complaints_311 (NYC)   • semantic.* (embeddings/clusters)
+   • app.* (users/complaints/updates/departments)   [+ geo.* after M5 0008]
+```
+Gateway owns **no** model code. Offline ML batch jobs (M1 training, M3 embedding/
+clustering, M4 training, **M5 Gi\***) run on the **host** and write artifacts/tables;
+they are not services. **No Worker/Redis/MinIO/Kafka/k8s** (deliberately deferred).
+
+---
+
+## 7. M1 — Classification (DONE)
+
+- **Data:** NYC 311 stratified across 12 months of 2024 (~204k) → canonical labeled
+  **201,537** (`data/gold/`); **19 canonical categories (18 + Other)**
+  (`ml/data/category_taxonomy.yaml`).
+- **Honest data reality:** NYC 311 has **no free-text complaint body**; `complaint_type`
+  is the **label** (can't be an input — leakage). Text used = **`descriptor`** (short,
+  formulaic; only ~776 unique).
+- **Models:** TF-IDF + **LogisticRegression** baseline; **DistilBERT** production
+  (`distilbert-base-uncased`). Primary metric **macro-F1**. MLflow-tracked. Model card:
+  `docs/model-cards/complaint-classifier.md`.
+- **Honest metrics (from model card):** in-distribution 311 descriptors —
+  DistilBERT macro-F1 **0.9626** vs TF-IDF **0.9756** (baseline slightly higher because
+  DistilBERT was trained on a **CPU-limited ~6k subset**); **citizen-phrasing probe** —
+  DistilBERT **wins** (probe acc **0.5556** / macro-F1 **0.4497** vs TF-IDF **0.3889** /
+  **0.3525**). The distinction (**in-distribution ≈ baseline; DistilBERT wins on
+  real citizen phrasing / generalization**) must be preserved, not exaggerated.
+- **Serving:** `ml_service /classify` ← gateway `POST /api/v1/classify` (`{description}` →
+  `{category, confidence}`). Local model, no paid API. **Do not break this endpoint.**
+
+---
+
+## 8. M3 — Semantic Intelligence (DONE)
+
+- **Embeddings:** `all-MiniLM-L6-v2` (384-d) in `semantic.complaint_embeddings`;
+  **HNSW cosine** index. 201,537 NYC vectors (~776 unique descriptors → fan-out).
+  Benchmark chose MiniLM (AUC 0.986 vs TF-IDF 0.951; BGE-small a drop-in future swap).
+- **Retrieval:** cosine ANN. **Precision@5 0.76, MRR 0.80**. p50 latency ~820 ms
+  (CPU single-query embed dominates).
+- **Duplicate detection:** similarity **+ PostGIS `ST_DWithin` spatial gate + temporal**
+  gate; threshold data-derived (~0.59). Natural-language: TF-IDF F1 0.17 vs MiniLM 0.95;
+  categorical: similarity-only precision 0.56 → **+ spatial gate → 1.00**.
+- **Clustering:** HDBSCAN (14 clusters, silhouette 0.20) vs K-Means (0.04); offline.
+- **APIs:** `ml_service /semantic/{search,related,duplicate-check,embed}` ← gateway
+  `POST /api/v1/semantic/{search,related,duplicate-check}`. **ml_service owns semantic +
+  read DB pool.** Docs: `docs/M3_DESIGN.md`, `docs/M3_REPORT.md`,
+  `docs/model-cards/semantic-embedding.md`. **Do not break these.**
+- **NYC vs Delhi dataset boundary (added by the Product/UX upgrade):** the M3 endpoints
+  take a `dataset` param — `'nyc'` (default; `silver.complaints_311`, version `v1`) vs
+  `'delhi'` (`app.complaints`, `embedding_version='delhi-v1'`, `data_version='delhi_demo'`).
+  The two corpora are kept **strictly separate**; the citizen product uses `'delhi'`.
+
+---
+
+## 9. Product/UX upgrade (DONE — outside M0–M7 numbering, now part of the platform)
+
+A 5-phase effort turning CiviTrack into a **role-based two-sided platform**. All on
+`main`. Full detail: **`docs/PRODUCT_UX.md`**.
+
+- **Auth & roles:** `app.users` (argon2 hashes, `role` citizen|admin), **JWT in httpOnly
+  cookies**, admin provisioning via `ADMIN_SIGNUP_CODE`. Gateway `/api/v1/auth/
+  {register,login,refresh,logout,me}`.
+- **Server-side authorization** is the authority (`require_admin`, ownership scoping);
+  `frontend/proxy.ts` (Next 16 renamed middleware) is convenience-only route guarding.
+- **Citizen experience:** `/citizen` dashboard (scrollytelling + 2D `CivicCanvas` hero),
+  `/citizen/report` (real submit + live **M1** suggestion + **M3 Delhi** duplicate check
+  + Delhi map picker), `/citizen/reports` (+ `/[id]` detail with status timeline),
+  `/citizen/nearby`. Complaints persist in `app.complaints` (identity from session).
+- **Admin operations:** `/admin` overview (KPIs), `/admin/issues` (searchable/filterable/
+  sortable/paginated queue), `/admin/issues/[id]` workspace (override category, assign
+  dept/person, change status, internal notes hidden from citizens, timeline, M3 related),
+  `/admin/map`, `/admin/analytics` (Recharts). Gateway `/api/v1/admin/stats|assignees`,
+  complaints CRUD, `/complaints/map` (non-PII), `/departments`.
+- **Delhi map & heat:** center Delhi `[28.6139, 77.209]`; category-aware markers;
+  data-driven heat thresholds **1–2 yellow / 3–4 orange / 5+ red** (client-aggregated).
+- **Public:** scrollytelling landing `/` (6-section narrative, animated pipeline demo,
+  role-aware CTAs, **no engineering language**); `/architecture` developer showcase
+  (holds all engineering/ML language + honest NYC-vs-Delhi data note + roadmap).
+- **Cleanup:** old mock pages retired as redirects (`/report→/citizen/report`,
+  `/issues→/`, `/dashboard→/`); `lib/mock-data.ts` + 13 orphaned mock components deleted;
+  role-aware command palette.
+- **Polish:** skip-link + `<main>` landmark, focus-visible rings, keyboard-navigable
+  queue rows, reduced-motion honored; Recharts dynamic-imported on analytics; one
+  magnetic hero CTA. Verified end-to-end; production build passes.
+
+---
+
+## 10. M4 — Resolution-Time Regression (DONE — on `feat/m4-resolution-regression` ONLY)
+
+> ⚠️ **On the current M5 branch, none of the following files exist** (M4 is unmerged).
+> They are on the M4 branch. **M4 is committed there, NOT merged into `main`, NOT pushed.**
+
+- **Model:** LightGBM **quantile** regressor on **200,180 closed** NYC 311 complaints.
+  Target **`log1p(resolution_hours)`** (heavy-tailed: p50 7.2 h, max 22,560 h). **1.9%
+  open excluded** (right-censored). Package `ml/models/resolution/`.
+- **Leakage allow-list:** EXCLUDE `closed_date`, `resolution_hours`, `status`;
+  `complaint_type` is a legit **input** here (it was the M1 label, not here).
+- **Baselines:** global-median; **agency×category-median** (the strong bar).
+- **Intervals:** quantiles q10/q50/q90 + **CQR conformal** calibration on val.
+- **Measured (time-split test, 49,939 rows):** LightGBM q50 **MAE 225 h** beats
+  agency×category-median **238 h** and global-median **276 h**; **MedAE 8.3 h** (typical
+  case; MAE inflated by heavy tail). 80% interval coverage **0.74** (time-shift) /
+  **0.80** (exchangeable random split). SHAP: `complaint_type` dominant.
+- **Serving:** `ml_service /resolution-time(+/meta)` ← gateway `POST /api/v1/resolution-time`
+  (**admin-only**). Boosters mounted read-only (git-ignored artifacts).
+- **UI:** admin **"Resolution insights"** on `/admin/analytics` (global SHAP drivers +
+  try-it form → expected range + why), **clearly labeled NYC-trained** — never applied
+  to Delhi complaints.
+- **Docs (on M4 branch):** `docs/M4_DESIGN.md`, `docs/M4_REPORT.md`,
+  `docs/model-cards/resolution-regressor.md`. Verified end-to-end (admin predict,
+  citizen 403, anon 401, M1/M3 intact, build passes).
+
+---
+
+## 11. M5 — Geospatial Hotspots (IN PROGRESS — the current task)
+
+**Goal:** statistically-grounded **Getis-Ord Gi\*** complaint hotspots (z-scores +
+p-values, FDR-corrected significance bands) over a ~1 km grid of the NYC 311 corpus —
+via **esda/libpysal + PostGIS** — plus (optional/deferred) DBSCAN spatial incident
+clustering. Offline batch → `geo.*` → gateway (admin) → admin "Hotspot intelligence" map.
+Design: **`docs/M5_DESIGN.md`**. **Measured results & method card: `docs/M5_REPORT.md`,
+`docs/model-cards/hotspots.md`** (executed & verified 2026-08-14 — see below).
+
+### 11.0 Measured outcome (2026-08-14, verified)
+- **Overall Gi\*** on 200,782 geocoded NYC 311 points over a ~1 km grid → **1,086 cells**,
+  **272 hot / 273 cold** significant (BH-FDR α=0.05); z-range −0.66…+3.48; hot-band cells
+  average 614/371/281 complaints vs cold 41/20/15 (clean monotonic gradient). Top hot cells
+  in Manhattan core + South Bronx (face validity ✅).
+- **Per-category** (top-6 types) + **12 monthly** windows computed; monthly hot-cell
+  **Jaccard stability mean 0.68**. Honest note: per-category runs show `hot_99=0` (999-perm
+  p-floor × BH across ~600–975 cells) — a real method property, documented.
+- **Serving verified:** gateway `GET /api/v1/hotspots(+/meta)` admin-only (anon 401 /
+  citizen 403 / admin 200); admin `/admin/hotspots` map labeled "NYC 311 spatial analysis";
+  Delhi product map unchanged; M1/M3 intact; production frontend build passes.
+- **DBSCAN incident clustering was deferred** (optional per design §4/§11); `geo.incident_clusters`
+  exists but is unpopulated.
+
+### 11.1 What was WRITTEN (now committed & verified)
+- **Migration `db/migrations/0008_geo_hotspots.{up,down}.sql`** — creates schema **`geo`**
+  with `geo.hotspots` (method, spatial_unit, cell_key, category, window_label, count,
+  gi_z, p_value, significance, centroid `geometry(Point,4326)`, cell `geometry(Polygon,
+  4326)`; UNIQUE(spatial_unit,cell_key,category,window_label); GiST + btree indexes) and
+  `geo.incident_clusters` (for optional DBSCAN). **NOT applied** (0008 unchecked).
+- **`ml/geo/` package (host batch job):**
+  - `config.py` — DB dsn, `CELL_SIZE_DEG=0.009` (~1 km), NYC `BBOX`, `PERMUTATIONS=999`,
+    `FDR_ALPHA=0.05`, `TOP_CATEGORIES=6`, 12 monthly windows, DBSCAN params.
+  - `grid.py` — `load_counts()` (fast integer-bucketed per-cell counts; supports
+    category/month filters), `build_cells()` (study area = non-empty cells + 8-neighbours
+    for zero-context), `top_categories()`.
+  - `gi_star.py` — `queen_weights()` (libpysal `W` from grid i/j, row-standardized),
+    `compute()` (`esda.G_Local(star=True, permutations=999)` → z + BH-FDR p → hot/cold
+    99/95/90 bands).
+  - `run.py` — batch: DELETE + recompute Gi\* for **overall + top-6 categories + 12
+    monthly windows**, writes count>0 cells to `geo.hotspots`, computes month-to-month
+    **Jaccard stability**, writes `ml/geo/reports/metrics.json`, prints a summary.
+    Run: `POSTGRES_PORT=5433 .venv/Scripts/python.exe -m ml.geo.run` (deps `esda 2.10`,
+    `libpysal 4.15` already installed in `.venv`).
+- **NOT written yet:** gateway `/api/v1/hotspots` router + schemas; admin "Hotspot
+  intelligence" map UI; `docs/M5_REPORT.md`; method/model card; DBSCAN clustering step
+  (optional).
+
+### 11.2 M5 data honesty
+- M5 Gi\* operates on the **real NYC 311** corpus (`silver.complaints_311`) — the only
+  data dense enough for valid spatial statistics. Coordinates are **real NYC**.
+- The product's **Delhi map uses ~46 seeded demo complaints** (`source='seed_delhi_demo'`,
+  clearly labeled "Demo Delhi data") — **far too sparse for meaningful Gi\***, so the
+  Delhi product map keeps its **simple count-based heat** and is **left unchanged**.
+- **Never** present the NYC Gi\* results as Delhi hotspots; **never** relabel NYC as
+  Delhi; **never** present seeded Delhi data as real government complaints. The admin
+  Hotspot view must be **clearly labeled "NYC 311 spatial analysis."**
+
+---
+
+## 12. M6 & M7 — future roadmap (PLANNED — DO NOT implement now)
+
+- **M6 — Time-series forecasting:** temporal aggregation of complaint volume, seasonality/
+  trend, SARIMA/seasonal-naive baselines → LightGBM global model, **rolling-origin
+  backtesting** (MASE/sMAPE), forecast intervals. Design-first.
+- **M7 — LLM/RAG:** grounded executive summaries, action recommendations, NL query
+  (retrieval over pgvector + guarded text-to-SQL), citations, hallucination controls,
+  PII scrubbing. Uses Anthropic Claude. Design-first.
+
+---
+
+## 13. College / portfolio ML concepts demonstrated (so far)
+
+Supervised **classification** (NLP; TF-IDF + LogReg baseline; **DistilBERT** fine-tuning;
+macro-F1; citizen-phrasing probe) · sentence **embeddings** + **vector similarity**
+(pgvector HNSW cosine) · **duplicate detection** (semantic + spatial-temporal gate) ·
+**clustering** (HDBSCAN vs K-Means) · supervised **regression** (**LightGBM** quantile,
+log target, leakage controls, **conformal** intervals, **SHAP**) · **spatial statistics**
+(**Getis-Ord Gi\*** — Queen weights, 999-permutation p-values, BH-FDR significance bands,
+temporal stability) · **PostgreSQL/PostGIS/pgvector** · model **serving**
+(FastAPI gateway→ml_service) · rigorous **evaluation** (baselines, honest metrics) ·
+**Docker Compose** · role-based product engineering (auth/RBAC). M6 (forecasting) and M7
+(LLM/RAG) will extend this. **M6/M7 are NOT complete — do not claim them.**
+
+---
+
+## 14. Known limitations (honest)
+
+- ML backbone is **NYC 311**; the product experience is Delhi via **seeded demo data**
+  (no real Delhi government complaint feed yet).
+- M1 DistilBERT ≈ TF-IDF in-distribution (trained on a CPU-limited subset); wins only on
+  citizen-phrasing generalization.
+- M3 descriptors are short/formulaic (~776 unique) → duplicate/retrieval partly
+  degenerate; the spatial-temporal gate is what makes duplicates precise.
+- M4 heavy-tailed target caps MAE (MedAE is the representative metric); trained on NYC,
+  not applied to Delhi.
+- **M4 branch not merged into `main`, not pushed.**
+- **M5 done but not merged, not pushed.** MAUP/permutation-floor/count-skew caveats apply
+  (see `docs/M5_REPORT.md` §8); DBSCAN incident clustering was deferred (optional).
+- Gateway image is now an **M5-branch build** (serves `/hotspots`, not `/resolution-time`);
+  ml_service is still the **M4-era 0.2.0** build (see §4 gotcha).
+- **DVC NOT initialized** (reproducibility via deterministic pipelines + content hashes +
+  MLflow). Frontend **not containerized**. Docker Desktop stops on machine pauses.
+- Nothing from this session (product-UX, M4, M5) is **pushed** to `origin`.
+
+---
+
+## 15. DO NOT BREAK
+
+M1 `POST /api/v1/classify` · M3 `POST /api/v1/semantic/*` + pgvector + PostGIS ·
+M5 `GET /api/v1/hotspots(+/meta)` (admin-only) + `geo.hotspots` + admin `/admin/hotspots`
+map (**NYC-labeled**) · authentication (JWT httpOnly) + citizen/admin **server-side**
+authorization · complaint persistence (`app.*`) · Delhi map + heat (unchanged by M5) ·
+admin operations (queue/workspace/analytics) ·
+the **M4 branch** work (leave `feat/m4-resolution-regression` intact; do not force-push/
+delete) · existing Docker architecture + `db/migrate.py` migration mechanism · the
+**NYC-vs-Delhi dataset boundary** and honesty rules.
+
+---
+
+## 16. Key file paths (quick reference)
+
+- Migrations: `db/migrations/000X_*.{up,down}.sql`; runner `db/migrate.py`.
+- M5 code: `ml/geo/{config,grid,gi_star,run}.py`; design `docs/M5_DESIGN.md`.
+- Gateway: `services/gateway/app/{main.py, routers/*, schemas/*, core/*}`.
+- ml_service: `services/ml_service/app/{main.py, routers/*, schemas/*, predictor.py, embedder.py, semantic_store.py}`.
+- Frontend: `frontend/app/{citizen,admin,architecture,login,register}/`,
+  `frontend/components/{citizen,admin}/*`, `frontend/lib/*`, `frontend/proxy.ts`.
+- Compose: `infra/docker-compose.yml`; env `infra/.env` (git-ignored) / `.env.example`.
+- Host venv with ML deps: `.venv/` (psycopg, lightgbm, shap, esda, libpysal, pandas,
+  sklearn). Legacy `venv/` is the old Flask/MySQL env — ignore.
+- **Docker CLI & Postgres are only reachable via PowerShell here (not the Bash tool).**
+  Run host Python jobs from Bash with `POSTGRES_PORT=5433 .venv/Scripts/python.exe …`
+  (add `PYTHONIOENCODING=utf-8` — the Windows console can't print unicode like `→`).
+
+---
+
+## Next Claude Session — Start Here
+
+**M5 (geospatial hotspots) is ✅ DONE — executed, verified, and committed** on branch
+`feat/m5-geospatial-hotspots` (not merged, not pushed). Do **not** redo M5. The measured
+results are in `docs/M5_REPORT.md` and `docs/model-cards/hotspots.md`. If you need to
+re-run the batch: `PYTHONIOENCODING=utf-8 POSTGRES_PORT=5433 .venv/Scripts/python.exe -m ml.geo.run`.
+
+**The next milestone is M6 — Time-series forecasting (§12). It is DESIGN-FIRST and NOT
+started.** Before any implementation:
+
+1. **Verify state first** (do not trust this doc over the code): `git status`, `git branch`,
+   PowerShell `docker ps` (all 3 containers healthy, ports 5433/8000/8001), and
+   `POSTGRES_PORT=5433 .venv/Scripts/python.exe db/migrate.py status` (expect `0001–0008` applied).
+2. **Write `docs/M6_DESIGN.md` first** and get it approved before coding — mirror the
+   M4/M5 pattern: temporal aggregation of complaint volume, seasonality/trend, SARIMA /
+   seasonal-naive **baselines** → a LightGBM global model, **rolling-origin backtesting**
+   (MASE/sMAPE), forecast intervals. Real NYC 311 for the analytics; honest baselines-first.
+3. **Do NOT redesign M1–M5** and **do NOT touch the M4 branch** (`feat/m4-resolution-regression`
+   remains unmerged/unpushed; leave it intact).
+4. **Branch reality unchanged:** nothing this session (product-UX, M4, M5) is pushed to
+   `origin`; M4 and M5 are independent branches off `main`, neither merged. The running
+   gateway now serves M5 `/hotspots` and **not** M4 `/resolution-time` (M4 is unmerged).
+
+Honesty rules (non-negotiable, carry into M6): ML runs on **real NYC 311** data; the
+**Delhi demo data is seeded, clearly labeled, and sparse** — never relabel NYC as Delhi
+or present seeded data as real government complaints. Do not break anything in §15.

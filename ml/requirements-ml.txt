@@ -7,10 +7,6 @@ mlflow>=2.14
 pyyaml>=6.0
 joblib>=1.4
 
-# ── M4 resolution-time regression ──
-lightgbm>=4.3
-shap>=0.45
-
 # ── Transformer (DistilBERT) — CPU wheels by default on Windows/macOS ──
 torch>=2.2
 transformers>=4.44
