@@ -60,7 +60,7 @@ const ROADMAP = [
   { m: 'M1', t: 'Classification', done: true },
   { m: 'M2', t: 'Product integration', done: true },
   { m: 'M3', t: 'Semantic intelligence', done: true },
-  { m: 'M4', t: 'Resolution-time prediction', done: false },
+  { m: 'M4', t: 'Resolution-time prediction', done: true },
   { m: 'M5', t: 'Geospatial hotspots', done: false },
   { m: 'M6', t: 'Forecasting', done: false },
   { m: 'M7', t: 'LLM / RAG layer', done: false },

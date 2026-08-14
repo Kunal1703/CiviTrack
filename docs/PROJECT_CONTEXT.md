@@ -304,7 +304,7 @@ Expected ML concepts: target engineering, regression, feature engineering, **bas
 | **M1** | ✅ COMPLETE | classifier trained/evaluated; ml_service + gateway; Docker e2e; model card; MLflow |
 | **M2** | ✅ COMPLETE | real `/api/v1/classify` from frontend; premium design system; builds clean |
 | **M3** | ✅ COMPLETE | embeddings + pgvector + retrieval/duplicate/clustering evaluated; semantic APIs; frontend; **Docker e2e verified**; tests pass; docs |
-| **M4** | ⛔ NOT STARTED | design-first required (`docs/M4_DESIGN.md`), then approval |
+| **M4** | ✅ COMPLETE | LightGBM resolution-time regressor (beats agency×category-median baseline on MAE; MedAE ~8h), CQR quantile intervals, SHAP; served via ml_service→gateway (admin-only); admin "resolution insights" UI; `docs/M4_DESIGN.md`, `M4_REPORT.md`, model card. Trained on NYC 311; not applied to Delhi. |
 | **M5** | 🔒 PLANNED | — |
 | **M6** | 🔒 PLANNED | — |
 | **M7** | 🔒 PLANNED | — |

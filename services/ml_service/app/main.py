@@ -13,7 +13,7 @@ from fastapi import FastAPI
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
-from app.routers import classify, semantic
+from app.routers import classify, resolution, semantic
 
 logger = get_logger("ml_service")
 
@@ -50,6 +50,16 @@ async def lifespan(app: FastAPI):
         app.state.db_pool = None
         logger.error("DB pool init failed: %s", exc)
 
+    # Resolution-time regressor (M4)
+    try:
+        from app.resolution_predictor import ResolutionPredictor
+
+        app.state.resolution = ResolutionPredictor(settings.resolution_model_dir)
+        logger.info("Resolution model loaded: %s", app.state.resolution.version)
+    except Exception as exc:  # noqa: BLE001
+        app.state.resolution = None
+        logger.error("Resolution model load failed (%s): %s", settings.resolution_model_dir, exc)
+
     yield
 
     if getattr(app.state, "db_pool", None) is not None:
@@ -68,6 +78,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(classify.router)
     app.include_router(semantic.router)
+    app.include_router(resolution.router)
 
     @app.get("/", tags=["system"])
     def root() -> dict[str, str]:

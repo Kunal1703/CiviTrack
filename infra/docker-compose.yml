@@ -90,6 +90,8 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       MODEL_DIR: /model
       MODEL_VERSION: ${MODEL_VERSION:-classifier-v1.0}
+      # Resolution-time regressor (M4) artifacts mount.
+      RESOLUTION_MODEL_DIR: /resolution_model
       # Semantic (M3): vector-search DB + embedding model (loaded offline from cache)
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -99,6 +101,8 @@ services:
     volumes:
       # Trained classifier artifact (read-only).
       - ../ml/models/classification/artifacts/transformer:/model:ro
+      # Trained resolution-time regressor (M4) — boosters + vocab (read-only).
+      - ../ml/models/resolution/artifacts:/resolution_model:ro
       # HuggingFace cache (embedding model) — offline use, no in-container download.
       - ${HF_CACHE}:/home/appuser/.cache/huggingface:ro
     ports:
